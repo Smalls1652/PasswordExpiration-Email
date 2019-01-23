@@ -107,6 +107,9 @@ function New-ExpirationEmail {
 
                 try {
                     if ($PSCmdlet.ShouldProcess($User.Email, "Send Email")) {
+
+                        $BodyHTML = $BodyHTML.Replace("`$USERNAME", $User.Name).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn).Replace("`$EXPIREDATE", $User.$PasswordExpiration)
+
                         Send-MailMessage -To $User.Email -From $EmailAddress -Priority High -UseSsl -Credential $EmailCredential -SmtpServer $SMTPServer -Port $SMTPPort -Subject $Subject -BodyAsHtml -Body $BodyHTML -ErrorAction Continue
                     }
                     $EmailedUsers += $User
