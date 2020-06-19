@@ -5,7 +5,7 @@ switch ((Test-Path -Path ".\build\")) {
     }
 }
 
-$buildDir = New-Item -Path ".\build" -ItemType "Directory"
+$null = New-Item -Path ".\build" -ItemType "Directory"
 
 Push-Location -Path ".\src\graph-email\"
 
