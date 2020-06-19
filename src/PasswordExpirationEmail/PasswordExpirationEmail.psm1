@@ -152,3 +152,33 @@ function New-ExpirationEmail {
         }
     }
 }
+
+function Connect-GraphMailClient {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ClientId,
+        [Parameter(Position = 1, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$TenantId,
+        [Parameter(Position = 2, Mandatory)]
+        [X509Certificate]$ClientCert
+    )
+
+    process {
+        $clientConfigSettings = [graph_email.ClientAppConfig]@{
+            "ClientId" = $ClientId;
+            "TenantId" = $TenantId;
+            "ClientCertificate" = $ClientCert;
+        }
+
+        $clientBuilder = [graph_email.ClientCreator]::new()
+
+        $authToken = $clientBuilder.buildApp($clientConfigSettings)
+
+        $PSCmdlet.SessionState.PSVariable.Set("GraphEmailClientToken", $authToken)
+
+        return $authToken
+    }
+}
