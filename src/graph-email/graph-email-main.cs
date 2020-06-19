@@ -67,21 +67,5 @@ namespace graph_email
             return result;
 
         }
-
-        public X509Certificate2 GetClientCert(string thumbprint)
-        {
-            X509Certificate2 clientCert;
-
-            X509Store certStore = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-            certStore.Open(OpenFlags.ReadOnly);
-
-            X509Certificate2Collection certCollection = certStore.Certificates;
-
-            X509Certificate2Collection validCerts = certCollection.Find(X509FindType.FindByTimeValid, DateTime.Now, false);
-            X509Certificate2Collection foundCerts = validCerts.Find(X509FindType.FindByThumbprint, thumbprint, false);
-            clientCert = foundCerts[0];
-
-            return clientCert;
-        }
     }
 }
