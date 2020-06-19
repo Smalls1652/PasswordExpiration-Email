@@ -168,8 +168,8 @@ function Connect-GraphMailClient {
 
     process {
         $clientConfigSettings = [graph_email.ClientAppConfig]@{
-            "ClientId" = $ClientId;
-            "TenantId" = $TenantId;
+            "ClientId"          = $ClientId;
+            "TenantId"          = $TenantId;
             "ClientCertificate" = $ClientCert;
         }
 
@@ -180,5 +180,90 @@ function Connect-GraphMailClient {
         $PSCmdlet.SessionState.PSVariable.Set("GraphEmailClientToken", $authToken)
 
         return $authToken
+    }
+}
+
+function Send-GraphMailClientMessage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FromAddress,
+        [Parameter(Position = 1, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$ToAddress,
+        [Parameter(Position = 2)]
+        [string[]]$CcAddress,
+        [Parameter(Position = 3, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Subject,
+        [Parameter(Position = 4, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Body,
+        [Parameter(Position = 5, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$BodyType
+    )
+
+    process {
+        $toAddressList = [System.Collections.Generic.List[graph_email.Mail.Classes.EmailAddress]]::new()
+
+        foreach ($address in $ToAddress) {
+            $toAddressList.Add(
+                [graph_email.Mail.Classes.EmailAddress]@{
+                    "emailAddress" = [graph_email.Mail.Classes.AddressOptions]@{
+                        "address" = $address;
+                    }
+                }
+            )
+        }
+
+        $ccAddressList = [System.Collections.Generic.List[graph_email.Mail.Classes.EmailAddress]]::new()
+
+        switch (($null = $CcAddress)) {
+            $false {
+                foreach ($address in $CcAddress) {
+                    $ccAddressList.Add(
+                        [graph_email.Mail.Classes.EmailAddress]@{
+                            "emailAddress" = [graph_email.Mail.Classes.AddressOptions]@{
+                                "address" = $address;
+                            }
+                        }
+                    )
+                }
+                break
+            }
+
+            $true {
+                Write-Verbose "No addresses were provided for the C.C. parameter."
+                break
+            }
+        }
+
+        $mailMessage = [graph_email.Mail.MailMessage]@{
+            "message"         = (
+                [graph_email.Mail.Classes.MessageOptions]@{
+                    "subject"      = $Subject;
+                    "body"         = (
+                        [graph_email.Mail.Classes.MessageBody]@{
+                            "contentType" = $BodyType;
+                            "content"     = $Body;
+                        }
+                    );
+                    "toRecipients" = $toAddressList;
+                    "ccRecipients" = $ccAddressList;
+                }
+            );
+            "saveToSentItems" = $false;
+        }
+
+        $authToken = $PSCmdlet.SessionState.PSVariable.GetValue("GraphEmailClientToken")
+
+        $restApiHeaders = @{
+            "Authorization" = $authToken.CreateAuthorizationHeader();
+            "Content-Type"  = "application/json"
+        }
+
+        Invoke-RestMethod -Method "Post" -Headers $restApiHeaders -Uri "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail" -Body ($mailMessage | ConvertTo-Json -Depth 4) -ErrorAction Stop
     }
 }
