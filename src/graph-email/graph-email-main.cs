@@ -36,6 +36,7 @@ namespace graph_email
             clientApp = ConfidentialClientApplicationBuilder.Create(configSettings.ClientId)
                 .WithClientSecret(configSettings.ClientSecret)
                 .WithAuthority(clientAuthority)
+                .WithTenantId(configSettings.TenantId)
                 .Build();
 
             authResult = getToken(clientApp, apiScopes).GetAwaiter().GetResult();
