@@ -90,13 +90,15 @@ function Get-ExpiringPasswords {
 function New-ExpirationEmail {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [Parameter(Mandatory = $true)][psobject]$Users,
-        [Parameter(Mandatory = $true)][string]$EmailAddress,
-        [Parameter(Mandatory = $true)][pscredential]$EmailCredential,
-        [Parameter(Mandatory = $true)][string]$BodyHTML,
-        [Parameter(Mandatory = $true)][string]$SMTPServer,
-        [Parameter(Mandatory = $true)][int]$SMTPPort,
+        [Parameter(Position = 0, Mandatory)]
+        [PasswordExpiration.Classes.ParsedUserData]$Users,
+        [Parameter(Position = 1, Mandatory)]
+        [string]$EmailAddress,
+        [Parameter(Position = 2, Mandatory)]
+        [string]$BodyHTML,
+        [Parameter(Position = 3)]
         [switch]$DayIntervals,
+        [Parameter(Position = 4)]
         [array]$Days = @(10, 5, 2, 1)
     )
 
@@ -107,15 +109,15 @@ function New-ExpirationEmail {
         if (!($User.Expired)) {
             if (($DayIntervals -and ($Days -contains $User.PasswordExpiresIn)) -or !($DayIntervals)) {
                 Write-Verbose "Emailing $($User.Email)..."
-                $Subject = "Alert: Password Expiration Notice ($($User.PasswordExpiresIn) days)"
+                $Subject = "Alert: Password Expiration Notice ($($User.PasswordExpiresIn.Days) days)"
                 
 
                 try {
-                    $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.Name).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
+                    $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.Name).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn.Days).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
 
                     if ($PSCmdlet.ShouldProcess($User.Email, "Send Email")) {
 
-                        Send-MailMessage -To $User.Email -From $EmailAddress -Priority High -UseSsl -Credential $EmailCredential -SmtpServer $SMTPServer -Port $SMTPPort -Subject $Subject -BodyAsHtml -Body $BodyHTMLSend -ErrorAction Continue
+                        Send-GraphMailClientMessage -FromAddress $EmailAddress -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML"
                     }
 
                     Write-Verbose $BodyHTMLSend
