@@ -88,17 +88,19 @@ function Get-ExpiringPasswords {
 }
 
 function New-ExpirationEmail {
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Position = 0, Mandatory)]
-        [PasswordExpiration.Classes.ParsedUserData]$Users,
+        [System.Collections.Generic.List[PasswordExpiration.Classes.ParsedUserData]]$Users,
         [Parameter(Position = 1, Mandatory)]
         [string]$EmailAddress,
         [Parameter(Position = 2, Mandatory)]
         [string]$BodyHTML,
         [Parameter(Position = 3)]
-        [switch]$DayIntervals,
+        [System.IO.FileInfo[]]$Attachments,
         [Parameter(Position = 4)]
+        [switch]$DayIntervals,
+        [Parameter(Position = 5)]
         [array]$Days = @(10, 5, 2, 1)
     )
 
@@ -117,7 +119,7 @@ function New-ExpirationEmail {
 
                     if ($PSCmdlet.ShouldProcess($User.Email, "Send Email")) {
 
-                        Send-GraphMailClientMessage -FromAddress $EmailAddress -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML"
+                        Send-GraphMailClientMessage -FromAddress $EmailAddress -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
                     }
 
                     Write-Verbose $BodyHTMLSend
@@ -128,36 +130,6 @@ function New-ExpirationEmail {
                 }
             }
         }
-    }
-}
-
-function Connect-GraphMailClient {
-    [CmdletBinding()]
-    param(
-        [Parameter(Position = 0, Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ClientId,
-        [Parameter(Position = 1, Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$TenantId,
-        [Parameter(Position = 2, Mandatory)]
-        [X509Certificate]$ClientCert
-    )
-
-    process {
-        $clientConfigSettings = [graph_email.ClientAppConfig]@{
-            "ClientId"          = $ClientId;
-            "TenantId"          = $TenantId;
-            "ClientCertificate" = $ClientCert;
-        }
-
-        $clientBuilder = [graph_email.ClientCreator]::new()
-
-        $authToken = $clientBuilder.buildApp($clientConfigSettings)
-
-        $PSCmdlet.SessionState.PSVariable.Set("GraphEmailClientToken", $authToken)
-
-        return $authToken
     }
 }
 
@@ -180,68 +152,109 @@ function Send-GraphMailClientMessage {
         [string]$Body,
         [Parameter(Position = 5, Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$BodyType
+        [string]$BodyType,
+        [Parameter(Position = 6)]
+        [System.IO.FileInfo[]]$Attachments
     )
 
     process {
-        $toAddressList = [System.Collections.Generic.List[graph_email.Mail.Classes.EmailAddress]]::new()
+       
+        #Get the HttpClient object from the Microsoft.Graph module
+        $graphClient = [Microsoft.Graph.PowerShell.Authentication.Helpers.HttpHelpers]::GetGraphHttpClient($graphClient)
 
+        #Use the 'MicrosoftGraphMessage' class as a base for generating the message.
+        $graphMessageObj = [Microsoft.Graph.PowerShell.Models.MicrosoftGraphMessage]@{
+            "Subject"         = $Subject;
+            "BodyContent"     = $Body;
+            "BodyContentType" = $BodyType;
+            "HasAttachments"  = $false;
+        }
+
+        #Add each address in ToAddress to a list of 'MicrosoftGraphRecipient'.
+        $toAddressList = [System.Collections.Generic.List[Microsoft.Graph.PowerShell.Models.MicrosoftGraphRecipient]]::new()
         foreach ($address in $ToAddress) {
-            $toAddressList.Add(
-                [graph_email.Mail.Classes.EmailAddress]@{
-                    "emailAddress" = [graph_email.Mail.Classes.AddressOptions]@{
-                        "address" = $address;
+            $toAddressList.Add([Microsoft.Graph.PowerShell.Models.MicrosoftGraphRecipient]@{
+                    "EmailAddress" = [Microsoft.Graph.PowerShell.Models.MicrosoftGraphEmailAddress]@{
+                        "Address" = $address
                     }
                 }
             )
         }
+        $graphMessageObj.ToRecipients = $toAddressList
 
-        $ccAddressList = [System.Collections.Generic.List[graph_email.Mail.Classes.EmailAddress]]::new()
-
-        switch (($null = $CcAddress)) {
+        #Add each address in CcAddress to a list of 'MicrosoftGraphRecipient', if input is provided.
+        switch ($null -eq $CcAddress) {
             $false {
+                $ccAddressList = [System.Collections.Generic.List[Microsoft.Graph.PowerShell.Models.MicrosoftGraphRecipient]]::new()
                 foreach ($address in $CcAddress) {
-                    $ccAddressList.Add(
-                        [graph_email.Mail.Classes.EmailAddress]@{
-                            "emailAddress" = [graph_email.Mail.Classes.AddressOptions]@{
-                                "address" = $address;
+                    $ccAddressList.Add([Microsoft.Graph.PowerShell.Models.MicrosoftGraphRecipient]@{
+                            "EmailAddress" = [Microsoft.Graph.PowerShell.Models.MicrosoftGraphEmailAddress]@{
+                                "Address" = $address
                             }
                         }
                     )
                 }
-                break
-            }
 
-            $true {
-                Write-Verbose "No addresses were provided for the C.C. parameter."
+                $graphMessageObj.CcRecipients = $ccAddressList
                 break
             }
         }
 
-        $mailMessage = [graph_email.Mail.MailMessage]@{
-            "message"         = (
-                [graph_email.Mail.Classes.MessageOptions]@{
-                    "subject"      = $Subject;
-                    "body"         = (
-                        [graph_email.Mail.Classes.MessageBody]@{
-                            "contentType" = $BodyType;
-                            "content"     = $Body;
+        #Convert the base 'MicrosoftGraphMessage' object to a JSON and then convert it into a hashtable.
+        #There is a strange quirk with the available 'MicrosoftGraphAttachment' class that does not include options for either 'contentBytes' or '@odata.type'. To make it easier to add attachments to the mailMessage variable, we're converting it to a hashtable.
+        $mailMessage = $graphMessageObj.ToJsonString() | ConvertFrom-Json -AsHashtable
+
+        switch ($null -eq $Attachments) {
+            $false {
+                $attachmentsList = [System.Collections.Generic.List[hashtable]]::new()
+                foreach ($attachment in $Attachments) {
+                    $attachmentInBase64 = [System.Convert]::ToBase64String((Get-Content -Path $attachment.FullName -Raw -AsByteStream))
+
+                    $attachmentsList.Add(
+                        @{
+                            "@odata.type"  = "#microsoft.graph.fileAttachment";
+                            "name"         = $attachment.Name;
+                            "contentBytes" = $attachmentInBase64;
+                            "isInline"     = $true;
                         }
-                    );
-                    "toRecipients" = $toAddressList;
-                    "ccRecipients" = $ccAddressList;
+                    )
                 }
-            );
-            "saveToSentItems" = $false;
+
+                $mailMessage['hasAttachments'] = $true;
+                $mailMessage.Add("attachments", $attachmentsList)
+                break
+            }
         }
 
-        $authToken = $PSCmdlet.SessionState.PSVariable.GetValue("GraphEmailClientToken")
+        <#
+        
+        $postBody is formatted the way it is by what is stated in the '/users/{Id | UserPrincipalName}/sendMail' documentation for what is needed in the request body:
+        https://docs.microsoft.com/en-us/graph/api/user-sendmail?view=graph-rest-1.0&tabs=http#request-body
 
-        $restApiHeaders = @{
-            "Authorization" = $authToken.CreateAuthorizationHeader();
-            "Content-Type"  = "application/json"
+        #>
+        $postBody = @{
+            "message"         = $mailMessage;
+            "saveToSentItems" = $false
         }
 
-        Invoke-RestMethod -Method "Post" -Headers $restApiHeaders -Uri "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail" -Body ($mailMessage | ConvertTo-Json -Depth 4) -ErrorAction Stop
+        #Convert $postBody to a 'System.Net.Http.StringContent' class and ensure the header property, 'ContentType', is set to 'application/json'.
+        $postBodyStringContent = [System.Net.Http.StringContent]::new(($postBody | ConvertTo-Json -Depth 4))
+        $postBodyStringContent.Headers.ContentType = "application/json"
+
+        #Build the full request Uri.
+        $requestUri = "users/$($FromAddress)/sendMail"
+        $fullUri = [System.Uri]::new($graphClient.BaseAddress, $requestUri)
+
+        #Build the 'System.Net.Http.HttpRequestMessage' class to pass through the HttpClient.
+        $httpRequestMessage = [System.Net.Http.HttpRequestMessage]@{
+            "Content" = $postBodyStringContent;
+            "RequestUri" = $fullUri;
+            "Method" = ([System.Net.Http.HttpMethod]::Post);
+        }
+
+        #Send the data to the GraphAPI
+        $apiResponse = $graphClient.SendAsync($httpRequestMessage).GetAwaiter().GetResult()
+
+        return $apiResponse
     }
 }
