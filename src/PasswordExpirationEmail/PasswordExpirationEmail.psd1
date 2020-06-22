@@ -51,13 +51,14 @@ Description = 'Get user accounts with expiring passwords and send an email.'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @(
+    "Microsoft.Graph.Authentication",
+    "Microsoft.Graph.Users.Mail"
+)
 
 # Assemblies that must be loaded prior to importing this module
 RequiredAssemblies = @(
-    "graph-email.dll",
-    "password-expiration-classes.dll",
-    "Microsoft.Identity.Client.dll"
+    "password-expiration-classes.dll"
 )
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
@@ -76,7 +77,6 @@ RequiredAssemblies = @(
 FunctionsToExport = @(
     "Get-ExpiringPasswords",
     "New-ExpirationEmail",
-    "Connect-GraphMailClient",
     "Send-GraphMailClientMessage"
 )
 
@@ -97,9 +97,7 @@ AliasesToExport = @()
 
 # List of all files packaged with this module
 FileList = @(
-    "graph-email.dll",
-    "password-expiration-classes.dll",
-    "Microsoft.Identity.Client.dll"
+    "password-expiration-classes.dll"
 )
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
