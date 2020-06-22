@@ -39,7 +39,7 @@ function Get-ExpiringPasswords {
 
         $currentDateTime = [datetime]::Now
 
-        $parsedData = [System.Collections.Generic.List[pscustomobject]]::new()
+        $parsedData = [System.Collections.Generic.List[PasswordExpiration.Classes.ParsedUserData]]::new()
 
         foreach ($User in $Users) {
             $foundAccounts = ($parsedData | Where-Object { $PSItem.ExpiringSoon -eq $true } | Measure-Object ).Count
@@ -49,7 +49,7 @@ function Get-ExpiringPasswords {
             $PasswordLife = (New-TimeSpan -Start $User.PasswordLastSet -End $currentDateTime)
             $PasswordExpiresIn = (New-TimeSpan -Start $currentDateTime -End $PasswordExpirationDate)
 
-            $usrObj = [pscustomobject]@{
+            $usrObj = [PasswordExpiration.Classes.ParsedUserData]@{
                 "SamAccountName"     = $User.SamAccountName;
                 "Email"              = $User.EmailAddress;
                 "Name"               = "$($User.GivenName) $($User.SurName)";

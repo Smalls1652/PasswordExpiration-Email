@@ -56,6 +56,7 @@ Description = 'Get user accounts with expiring passwords and send an email.'
 # Assemblies that must be loaded prior to importing this module
 RequiredAssemblies = @(
     "graph-email.dll",
+    "password-expiration-classes.dll",
     "Microsoft.Identity.Client.dll"
 )
 
@@ -97,6 +98,7 @@ AliasesToExport = @()
 # List of all files packaged with this module
 FileList = @(
     "graph-email.dll",
+    "password-expiration-classes.dll",
     "Microsoft.Identity.Client.dll"
 )
 
