@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace graph_email
 {
@@ -8,11 +9,20 @@ namespace graph_email
         public class MailMessage
         {
             public Classes.MessageOptions message { get; set; }
-            public Boolean saveToSentItems { get; set; }
+            public bool saveToSentItems { get; set; }
         }
 
         namespace Classes
         {
+            public class Conversion
+            {
+                public string ToJson (MailMessage msg)
+                {
+                    string jsonString = JsonConvert.SerializeObject(msg);
+
+                    return jsonString;
+                }
+            }
 
             public class MessageOptions
             {
@@ -22,6 +32,9 @@ namespace graph_email
 
                 public List<EmailAddress> toRecipients { get; set; }
                 public List<EmailAddress> ccRecipients { get; set; }
+
+                public List<FileAttachment> attachments { get; set; }
+                public bool hasAttachments { get; set; }
             }
 
             public class MessageBody
@@ -38,6 +51,15 @@ namespace graph_email
             public class AddressOptions
             {
                 public string address { get; set; }
+            }
+
+            public class FileAttachment
+            {
+                [JsonProperty("@odata.type")]
+                public string OdataType = "#microsoft.graph.fileAttachment";
+                public string name { get; set; }
+                public string contentBytes { get; set; }
+                public bool isInline { get; set; }
             }
         }
     }
