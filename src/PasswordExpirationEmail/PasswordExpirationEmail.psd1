@@ -57,7 +57,8 @@ Description = 'Get user accounts with expiring passwords and send an email.'
 RequiredAssemblies = @(
     "graph-email.dll",
     "password-expiration-classes.dll",
-    "Microsoft.Identity.Client.dll"
+    "Microsoft.Identity.Client.dll",
+    "Newtonsoft.Json.dll"
 )
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
@@ -77,6 +78,7 @@ FunctionsToExport = @(
     "Get-ExpiringPasswords",
     "New-ExpirationEmail",
     "Connect-GraphMailClient",
+    "New-GraphMailClientMessage",
     "Send-GraphMailClientMessage"
 )
 
@@ -99,7 +101,8 @@ AliasesToExport = @()
 FileList = @(
     "graph-email.dll",
     "password-expiration-classes.dll",
-    "Microsoft.Identity.Client.dll"
+    "Microsoft.Identity.Client.dll",
+    "Newtonsoft.Json.dll"
 )
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.

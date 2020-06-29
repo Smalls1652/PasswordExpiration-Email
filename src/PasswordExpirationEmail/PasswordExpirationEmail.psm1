@@ -88,17 +88,19 @@ function Get-ExpiringPasswords {
 }
 
 function New-ExpirationEmail {
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Position = 0, Mandatory)]
-        [PasswordExpiration.Classes.ParsedUserData]$Users,
+        [System.Collections.Generic.List[PasswordExpiration.Classes.ParsedUserData]]$Users,
         [Parameter(Position = 1, Mandatory)]
         [string]$EmailAddress,
         [Parameter(Position = 2, Mandatory)]
         [string]$BodyHTML,
         [Parameter(Position = 3)]
-        [switch]$DayIntervals,
+        [System.IO.FileInfo[]]$Attachments,
         [Parameter(Position = 4)]
+        [switch]$DayIntervals,
+        [Parameter(Position = 5)]
         [array]$Days = @(10, 5, 2, 1)
     )
 
@@ -117,7 +119,8 @@ function New-ExpirationEmail {
 
                     if ($PSCmdlet.ShouldProcess($User.Email, "Send Email")) {
 
-                        Send-GraphMailClientMessage -FromAddress $EmailAddress -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML"
+                        $mailMessageObj = New-GraphMailClientMessage -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
+                        Send-GraphMailClientMessage -MailMessage $mailMessageObj -FromAddress $EmailAddress
                     }
 
                     Write-Verbose $BodyHTMLSend
@@ -161,26 +164,25 @@ function Connect-GraphMailClient {
     }
 }
 
-function Send-GraphMailClientMessage {
+function New-GraphMailClientMessage {
     [CmdletBinding()]
     param(
         [Parameter(Position = 0, Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$FromAddress,
-        [Parameter(Position = 1, Mandatory)]
-        [ValidateNotNullOrEmpty()]
         [string[]]$ToAddress,
-        [Parameter(Position = 2)]
+        [Parameter(Position = 1)]
         [string[]]$CcAddress,
-        [Parameter(Position = 3, Mandatory)]
+        [Parameter(Position = 2, Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Subject,
-        [Parameter(Position = 4, Mandatory)]
+        [Parameter(Position = 3, Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Body,
-        [Parameter(Position = 5, Mandatory)]
+        [Parameter(Position = 4, Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$BodyType
+        [string]$BodyType,
+        [Parameter(Position = 5)]
+        [System.IO.FileInfo[]]$Attachments
     )
 
     process {
@@ -221,19 +223,61 @@ function Send-GraphMailClientMessage {
         $mailMessage = [graph_email.Mail.MailMessage]@{
             "message"         = (
                 [graph_email.Mail.Classes.MessageOptions]@{
-                    "subject"      = $Subject;
-                    "body"         = (
+                    "subject"        = $Subject;
+                    "body"           = (
                         [graph_email.Mail.Classes.MessageBody]@{
                             "contentType" = $BodyType;
                             "content"     = $Body;
                         }
                     );
-                    "toRecipients" = $toAddressList;
-                    "ccRecipients" = $ccAddressList;
+                    "toRecipients"   = $toAddressList;
+                    "ccRecipients"   = $ccAddressList;
+                    "attachments"    = $null;
+                    "hasAttachments" = $false;
                 }
             );
             "saveToSentItems" = $false;
         }
+
+        switch ($null -eq $Attachments) {
+            $false {
+                $attachmentsList = [System.Collections.Generic.List[graph_email.Mail.Classes.FileAttachment]]::new()
+                foreach ($attachment in $Attachments) {
+                    $attachmentInBase64 = [System.Convert]::ToBase64String((Get-Content -Path $attachment.FullName -Raw -AsByteStream))
+
+                    $attachmentsList.Add(
+                        [graph_email.Mail.Classes.FileAttachment]@{
+                            "name"         = $attachment.Name;
+                            "contentBytes" = $attachmentInBase64;
+                            "isInline"     = $true;
+                        }
+                    )
+                }
+
+                $mailMessage.message.hasAttachments = $true;
+                $mailMessage.message.attachments = $attachmentsList
+                break
+            }
+        }
+
+        return $mailMessage
+    }
+}
+
+function Send-GraphMailClientMessage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [graph_email.Mail.MailMessage]$MailMessage,
+        [Parameter(Position = 1, Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FromAddress
+    )
+
+    process {
+
+        $mailMessageJson = [graph_email.Mail.Classes.Conversion]::new().ToJson($MailMessage)
 
         $authToken = $PSCmdlet.SessionState.PSVariable.GetValue("GraphEmailClientToken")
 
@@ -242,6 +286,6 @@ function Send-GraphMailClientMessage {
             "Content-Type"  = "application/json"
         }
 
-        Invoke-RestMethod -Method "Post" -Headers $restApiHeaders -Uri "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail" -Body ($mailMessage | ConvertTo-Json -Depth 4) -ErrorAction Stop
+        Invoke-RestMethod -Method "Post" -Headers $restApiHeaders -Uri "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail" -Body $mailMessageJson -ErrorAction Stop
     }
 }
