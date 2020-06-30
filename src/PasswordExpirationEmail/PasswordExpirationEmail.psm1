@@ -243,7 +243,20 @@ function New-GraphMailClientMessage {
             $false {
                 $attachmentsList = [System.Collections.Generic.List[graph_email.Mail.Classes.FileAttachment]]::new()
                 foreach ($attachment in $Attachments) {
-                    $attachmentInBase64 = [System.Convert]::ToBase64String((Get-Content -Path $attachment.FullName -Raw -AsByteStream))
+                    $attachmentRaw = $null
+
+                    switch ($PSVersionTable.PSVersion.ToString() -like "5.1*") {
+                        $true {
+                            $attachmentRaw = Get-Content -Path $attachment.FullName -Raw -Encoding Byte
+                            break
+                        }
+
+                        Default {
+                            $attachmentRaw = Get-Content -Path $attachment.FullName -Raw -AsByteStream
+                            break
+                        }
+                    }
+                    $attachmentInBase64 = [System.Convert]::ToBase64String($attachmentRaw)
 
                     $attachmentsList.Add(
                         [graph_email.Mail.Classes.FileAttachment]@{
