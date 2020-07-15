@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = '.\PasswordExpirationEmail.psm1'
+RootModule = 'PasswordExpirationEmail.psm1'
 
 # Version number of this module.
 ModuleVersion = '2020.06.01'
@@ -126,7 +126,7 @@ PrivateData = @{
         # ReleaseNotes = ''
 
         # Prerelease string of this module
-        Prerelease = 'alpha06'
+        Prerelease = 'alpha07'
 
         # External dependent modules of this module
         # ExternalModuleDependencies = ''
