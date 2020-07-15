@@ -1,9 +1,3 @@
-filter LastLogonandNotNullEmail {
-    if (($PSItem.LastLogonDate -gt (Get-Date).AddYears(-1)) -and ($PSItem.EmailAddress)) {
-        $PSItem
-    }
-}
-
 function Get-ExpiringPasswords {
     [CmdletBinding()]
     param(
@@ -13,77 +7,62 @@ function Get-ExpiringPasswords {
         [int]$MaxAlive = 120,
         [Parameter(Position = 2, Mandatory)]
         [string]$OUPath,
-        [Parameter(Position = 3)]
-        [string]$Server
+        [Parameter(Position = 3, Mandatory)]
+        [string]$DomainName
     )
+
+    begin {
+        filter LastLogonandNotNullEmail {
+            if (($PSItem.LastLogonDate -gt (Get-Date).AddYears(-1)) -and ($PSItem.UserPrincipalName -like "*$($accountSearcher.domainController.Domain)")) {
+                $PSItem
+            }
+        }
+    }
 
     process {
 
-        $AdSplat = @{
-            "Filter"     = { (Enabled -eq $true) };
-            "SearchBase" = $OUPath;
-            "Properties" = @("PasswordLastSet", "EmailAddress", "LastLogonDate")
+        $ProgressSplat = @{
+            "Activity" = "Get user's with expiring passwords";
+            "Status"   = "Progress->";
+            "Id"       = 0;
+        }
+        
+        $ProgressSplat2 = @{
+            "Activity" = "Parsing user data";
+            "Status"   = "Progress->";
+            "Id"       = 1;
+            "ParentId" = 0;
         }
 
-        if ($Server) {
-            $AdSplat.Add("Server", $Server)
-        }
+        Write-Progress @ProgressSplat -PercentComplete 0 -CurrentOperation "Getting users from AD"
 
-        Write-Progress -Id 1 -Activity "Grabbing Data" -Status "Progress" -CurrentOperation "Grabbing accounts from AD..."
-        $Users = Get-ADUser @AdSplat -ErrorAction "Stop" | LastLogonandNotNullEmail
 
-        Write-Progress -Id 1 -Activity "Grabbing Data" -Completed
+        $accountSearcher = [PasswordExpiration.Helpers.ActiveDirectory.AccountSearcher]::new($DomainName, $OUPath, $true)
+
+        $users = $accountSearcher.GetUsers() | LastLogonandNotNullEmail
 
         $i = 1
-        $totalUsers = $Users | Measure-Object | Select-Object -ExpandProperty "Count"
+        $totalUsers = ($users | Measure-Object).Count
 
-        $currentDateTime = [datetime]::Now
+        Write-Progress @ProgressSplat -PercentComplete 50 -CurrentOperation "Parsing users"
+        $parser = [PasswordExpiration.Helpers.UserParser]::new()
+        $parsedUsers = [System.Collections.Generic.List[PasswordExpiration.Classes.ParsedUserData]]::new()
 
-        $parsedData = [System.Collections.Generic.List[PasswordExpiration.Classes.ParsedUserData]]::new()
+        Write-Progress @ProgressSplat2 -PercentComplete 0 -CurrentOperation "Starting parse operations"
+        foreach ($user in $users) {
+            Write-Progress @ProgressSplat2 -CurrentOperation "Parsing data for $($user.UserName)..." -PercentComplete ($i / $totalUsers * 100)
 
-        foreach ($User in $Users) {
-            $foundAccounts = ($parsedData | Where-Object { $PSItem.ExpiringSoon -eq $true } | Measure-Object ).Count
-            Write-Progress -Id 2 -Activity "Parsing Data" -Status "Progress: [$($i)/$($totalUsers)] - Found: [$($foundAccounts)]" -CurrentOperation "Parsing data for $($User.Name)..." -PercentComplete ($i / $totalUsers * 100)
+            $p = $parser.ParseData($user, $MaxAlive, $DaysRemaining)
+            $parsedUsers.Add($p)
 
-            $PasswordExpirationDate = $User.PasswordLastSet.AddDays($MaxAlive)
-            $PasswordLife = (New-TimeSpan -Start $User.PasswordLastSet -End $currentDateTime)
-            $PasswordExpiresIn = (New-TimeSpan -Start $currentDateTime -End $PasswordExpirationDate)
-
-            $usrObj = [PasswordExpiration.Classes.ParsedUserData]@{
-                "SamAccountName"     = $User.SamAccountName;
-                "Email"              = $User.EmailAddress;
-                "Name"               = "$($User.GivenName) $($User.SurName)";
-                "PasswordLastSet"    = $User.PasswordLastSet;
-                "PasswordExpiration" = $PasswordExpirationDate;
-                "PasswordLife"       = $PasswordLife;
-                "PasswordExpiresIn"  = $PasswordExpiresIn;
-                "Expired"            = $false;
-                "ExpiringSoon"       = $false;
-            }
-
-            switch ($PasswordLife.Days -ge $MaxAlive) {
-                $true {
-                    $usrObj.Expired = $true
-                    break
-                }
-            }
-
-            switch ($PasswordExpiresIn.Days -le $DaysRemaining) {
-                $true {
-                    $usrObj.ExpiringSoon = $true
-                    break
-                }
-            }
-
-            $parsedData.Add($usrObj)
-                    
             $i++
         }
+        Write-Progress @ProgressSplat2 -Completed
+        Write-Progress @ProgressSplat -Completed
     }
     
     end {
-        Write-Progress -Id 2 -Activity "Parsing Data" -Completed
-        return $parsedData
+        return $parsedUsers
     }
 }
 

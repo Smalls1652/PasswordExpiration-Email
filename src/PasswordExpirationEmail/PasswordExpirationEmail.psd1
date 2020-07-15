@@ -56,7 +56,7 @@ Description = 'Get user accounts with expiring passwords and send an email.'
 # Assemblies that must be loaded prior to importing this module
 RequiredAssemblies = @(
     "graph-email.dll",
-    "password-expiration-classes.dll",
+    "password-expiration.dll",
     "Microsoft.Identity.Client.dll",
     "Newtonsoft.Json.dll"
 )
@@ -100,7 +100,7 @@ AliasesToExport = @()
 # List of all files packaged with this module
 FileList = @(
     "graph-email.dll",
-    "password-expiration-classes.dll",
+    "password-expiration.dll",
     "Microsoft.Identity.Client.dll",
     "Newtonsoft.Json.dll"
 )
@@ -126,7 +126,7 @@ PrivateData = @{
         # ReleaseNotes = ''
 
         # Prerelease string of this module
-        Prerelease = 'alpha04'
+        Prerelease = 'alpha05'
 
         # External dependent modules of this module
         # ExternalModuleDependencies = ''
