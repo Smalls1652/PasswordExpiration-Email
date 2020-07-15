@@ -83,30 +83,34 @@ function New-ExpirationEmail {
         [array]$Days = @(10, 5, 2, 1)
     )
 
-    $EmailedUsers = @()
-
     foreach ($User in $Users) {
 
         if (!($User.Expired)) {
             if (($DayIntervals -and ($Days -contains $User.PasswordExpiresIn)) -or !($DayIntervals)) {
-                Write-Verbose "Emailing $($User.Email)..."
+                Write-Verbose "Emailing $($User.UserPrincipalName)..."
                 $Subject = "Alert: Password Expiration Notice ($($User.PasswordExpiresIn.Days) days)"
                 
 
                 try {
-                    $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.Name).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn.Days).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
+                    $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.DisplayName).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn.Days).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
 
-                    if ($PSCmdlet.ShouldProcess($User.Email, "Send Email")) {
+                    if ($PSCmdlet.ShouldProcess($User.UserPrincipalName, "Send Email")) {
 
-                        $mailMessageObj = New-GraphMailClientMessage -ToAddress $User.Email -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
+                        $mailMessageObj = New-GraphMailClientMessage -ToAddress $User.UserPrincipalName -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
                         Send-GraphMailClientMessage -MailMessage $mailMessageObj -FromAddress $EmailAddress
                     }
 
-                    Write-Verbose $BodyHTMLSend
-                    $EmailedUsers += $User
+                    [PasswordExpiration.Classes.EmailSentStatus]@{
+                        "UserPrincipalName" = $User.UserPrincipalName;
+                        "EmailSent" = $true
+                    }
                 }
                 catch {
-                    Write-Error "There was an error emailing $($User.Email)."
+                    Write-Error "There was an error emailing $($User.UserPrincipalName)."
+                    [PasswordExpiration.Classes.EmailSentStatus]@{
+                        "UserPrincipalName" = $User.UserPrincipalName;
+                        "EmailSent" = $false
+                    }
                 }
             }
         }
