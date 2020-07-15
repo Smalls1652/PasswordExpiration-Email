@@ -33,5 +33,19 @@ namespace PasswordExpiration
             public Boolean Expired { get; set; }
             public Boolean ExpiringSoon { get; set; }
         }
+
+        public class EmailSentStatus
+        {
+            public EmailSentStatus() { }
+
+            public EmailSentStatus(string _UserPrincipalName, Boolean _EmailSent)
+            {
+                UserPrincipalName = _UserPrincipalName;
+                EmailSent = _EmailSent;
+            }
+
+            public string UserPrincipalName { get; set; }
+            public Boolean EmailSent { get; set; }
+        }
     }
 }
