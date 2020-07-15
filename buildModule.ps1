@@ -9,15 +9,15 @@ $null = New-Item -Path ".\build" -ItemType "Directory"
 
 Push-Location -Path ".\src\graph-email\"
 
-Start-Process -FilePath "dotnet" -ArgumentList @("clean") -Wait
-Start-Process -FilePath "dotnet" -ArgumentList @("publish") -Wait
+dotnet clean
+dotnet publish /property:PublishWithAspNetCoreTargetManifest=false
 
 Pop-Location
 
-Push-Location -Path ".\src\password-expiration-classes\"
+Push-Location -Path ".\src\password-expiration\"
 
-Start-Process -FilePath "dotnet" -ArgumentList @("clean") -Wait
-Start-Process -FilePath "dotnet" -ArgumentList @("publish") -Wait
+dotnet clean
+dotnet publish /property:PublishWithAspNetCoreTargetManifest=false
 
 Pop-Location
 
@@ -27,4 +27,4 @@ Copy-Item -Path ".\src\graph-email\bin\Debug\netstandard2.0\publish\graph-email.
 Copy-Item -Path ".\src\graph-email\bin\Debug\netstandard2.0\publish\Microsoft.Identity.Client.dll" -Destination ".\build\PasswordExpirationEmail\"
 Copy-Item -Path ".\src\graph-email\bin\Debug\netstandard2.0\publish\Newtonsoft.Json.dll" -Destination ".\build\PasswordExpirationEmail\"
 
-Copy-Item -Path ".\src\password-expiration-classes\bin\Debug\netstandard2.0\publish\password-expiration-classes.dll" -Destination ".\build\PasswordExpirationEmail\"
+Copy-Item -Path ".\src\password-expiration\bin\Debug\netstandard2.0\publish\password-expiration.dll" -Destination ".\build\PasswordExpirationEmail\"
