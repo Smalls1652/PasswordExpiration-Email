@@ -84,32 +84,44 @@ function New-ExpirationEmail {
     )
 
     foreach ($User in $Users) {
+        switch ($User.Expired) {
+            $true {
+                Write-Verbose "'$($User.UserPrincipalName)' - Password already expired."
+                break
+            }
 
-        if (!($User.Expired)) {
-            if (($DayIntervals -and ($Days -contains $User.PasswordExpiresIn)) -or !($DayIntervals)) {
-                Write-Verbose "Emailing $($User.UserPrincipalName)..."
-                $Subject = "Alert: Password Expiration Notice ($($User.PasswordExpiresIn.Days) days)"
+            Default {
+                switch ( (($DayIntervals -eq $true) -and ($User.PasswordExpiresIn.Days -in $Days)) -or ($DayIntervals -eq $false) ) {
+                    $false {
+                        break
+                    }
+
+                    Default {
+                        Write-Verbose "Emailing $($User.UserPrincipalName)..."
+                        $Subject = "Alert: Password Expiration Notice ($($User.PasswordExpiresIn.Days) days)"
                 
+                        try {
+                            $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.DisplayName).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn.Days).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
 
-                try {
-                    $BodyHTMLSend = $BodyHTML.Replace("`$USERNAME", $User.DisplayName).Replace("`$EXPIREINDAYS", $User.PasswordExpiresIn.Days).Replace("`$EXPIREDATE", (Get-Date $User.PasswordExpiration -Format g))
+                            if ($PSCmdlet.ShouldProcess($User.UserPrincipalName, "Send Email")) {
 
-                    if ($PSCmdlet.ShouldProcess($User.UserPrincipalName, "Send Email")) {
+                                $mailMessageObj = New-GraphMailClientMessage -ToAddress $User.UserPrincipalName -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
+                                Send-GraphMailClientMessage -MailMessage $mailMessageObj -FromAddress $EmailAddress
+                            }
 
-                        $mailMessageObj = New-GraphMailClientMessage -ToAddress $User.UserPrincipalName -Subject $Subject -Body $BodyHTMLSend -BodyType "HTML" -Attachments $Attachments
-                        Send-GraphMailClientMessage -MailMessage $mailMessageObj -FromAddress $EmailAddress
-                    }
-
-                    [PasswordExpiration.Classes.EmailSentStatus]@{
-                        "UserPrincipalName" = $User.UserPrincipalName;
-                        "EmailSent" = $true
-                    }
-                }
-                catch {
-                    Write-Error "There was an error emailing $($User.UserPrincipalName)."
-                    [PasswordExpiration.Classes.EmailSentStatus]@{
-                        "UserPrincipalName" = $User.UserPrincipalName;
-                        "EmailSent" = $false
+                            [PasswordExpiration.Classes.EmailSentStatus]@{
+                                "UserPrincipalName" = $User.UserPrincipalName;
+                                "EmailSent"         = $true
+                            }
+                        }
+                        catch {
+                            Write-Error "There was an error emailing $($User.UserPrincipalName)."
+                            [PasswordExpiration.Classes.EmailSentStatus]@{
+                                "UserPrincipalName" = $User.UserPrincipalName;
+                                "EmailSent"         = $false
+                            }
+                        }
+                        break
                     }
                 }
             }
