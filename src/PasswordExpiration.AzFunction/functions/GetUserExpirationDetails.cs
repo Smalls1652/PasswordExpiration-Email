@@ -43,30 +43,33 @@ namespace PasswordExpiration.AzFunction
             var logger = executionContext.GetLogger("GetUserExpirationDetails");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
+            // Check to see if 'maxAge' was provided in the query.
             string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
             int maxAge;
-            logger.LogInformation($"maxAge: {maxAgeQuery}");
-
             switch (string.IsNullOrEmpty(maxAgeQuery))
             {
+                // If 'maxAge' is null (Not provided), then set the max age to the default.
                 case true:
                     maxAge = 56;
                     break;
-                    
+
+                // Otherwise, set the 'maxAge' to what the user provided.    
                 default:
                     maxAge = Convert.ToInt32(maxAgeQuery);
                     break;
             }
 
+            // Create the 'UserTools' object from the GraphClientService.
             UserTools graphUserTools = new UserTools(graphClientSvc);
 
+            // Search for the user and parse their password expiration details.
             User foundUser = graphUserTools.GetUser(userPrincipalName);
             UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(foundUser, TimeSpan.FromDays(maxAge), TimeSpan.FromDays(10));
 
+            // Generate the response to send back to the client with the parsed user information.
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "application/json");
             response.WriteString(JsonConverter.ConvertToJson<UserPasswordExpirationDetails>(userPasswordExpirationDetails));
-
             return response;
         }
 }

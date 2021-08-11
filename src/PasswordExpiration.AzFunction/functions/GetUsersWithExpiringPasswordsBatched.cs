@@ -35,62 +35,53 @@ namespace PasswordExpiration.AzFunction
             var logger = executionContext.GetLogger("GetUsersWithExpiringPasswords");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
+            // Check to see if 'maxAge' was provided in the query.
             string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
             int maxAge;
-
             switch (string.IsNullOrEmpty(maxAgeQuery))
             {
+                // If 'maxAge' is null (Not provided), then set the max age to the default.
                 case true:
                     maxAge = 56;
                     break;
 
+                // Otherwise, set the 'maxAge' to what the user provided.    
                 default:
                     maxAge = Convert.ToInt32(maxAgeQuery);
                     break;
             }
 
-            logger.LogInformation($"Password max age: {maxAge} days");
-
-            /*
-            ApiScopesConfig scopesConfig = new ApiScopesConfig()
-            {
-                Scopes = new string[]{
-                    "https://graph.microsoft.com/.default"
-                }
-            };
-
-            logger.LogInformation("Creating Graph Client.");
-            GraphClient graphClient = new GraphClient(
-                baseUri: new Uri("https://graph.microsoft.com/beta/"),
-                clientId: appId,
-                tenantId: azureAdTenantId,
-                clientSecret: appSecret,
-                apiScopes: scopesConfig
-            );
-            */
-
-            //logger.LogInformation($"Getting users, with the '{domainName}' domain, with expiring passwords.");
-            //GraphClient graphClient = executionContext.Items["graphClient"] as GraphClient;
-
+            // Create the 'UserTools' object from the GraphClientService.
             UserTools graphUserTools = new UserTools(graphClientSvc);
 
+            /*
+                The following section is to prep for running the tasks by:
+                    - Creating a task throttler (using SemaphoreSlim) to limit the amount of concurrent threads used to 10.
+                    - Creating a 'ConcurrentBag' for the tasks to store each user data in.
+                    - Creating a 'List' for storing the created tasks in.
+            */
             SemaphoreSlim taskThrottler = new SemaphoreSlim(10);
-
             ConcurrentBag<UserPasswordExpirationDetails> usersWithExpiringPasswordsBag = new ConcurrentBag<UserPasswordExpirationDetails>();
             List<Task> taskList = new List<Task>();
+
+            // Run a for loop to increment from 65 to 90 (The UTF32 decimal codes for the letters A-Z) to create the tasks to get users.
             for (int i = 65; i <= 90; i++)
             {
+                // If we reach the max number of concurrent tasks, then wait to create the rest of the tasks.
                 await taskThrottler.WaitAsync();
 
+                // Convert the current loop integer (i) value into the corresponding UTF32 character.
                 string lastNameStartsWith = Char.ConvertFromUtf32(i);
                 logger.LogInformation($"Creating task for getting users, under the '{domainName}' domain and their last name starts with '{lastNameStartsWith}', with expiring passwords.");
 
+                // Create the task to get the users.
                 taskList.Add(
                     Task.Run(
                         () =>
                         {
                             try
                             {
+                                // Get all of the users matching the search criteria.
                                 List<UserPasswordExpirationDetails> userPasswordExpirationDetails = ExpiringPasswordFinder.GetUsersWithExpiringPasswords(
                                     graphUserTools,
                                     domainName,
@@ -99,6 +90,7 @@ namespace PasswordExpiration.AzFunction
                                     TimeSpan.FromDays(10)
                                 );
 
+                                // Add each found user into the 'ConcurrentBag' of all the users.
                                 foreach (UserPasswordExpirationDetails user in userPasswordExpirationDetails)
                                 {
                                     usersWithExpiringPasswordsBag.Add(user);
@@ -106,6 +98,7 @@ namespace PasswordExpiration.AzFunction
                             }
                             finally
                             {
+                                // When the task is finished, release the thread for the next task to utilize.
                                 taskThrottler.Release();
                             }
                         }
@@ -113,25 +106,30 @@ namespace PasswordExpiration.AzFunction
                 );
             }
 
+            // Wait for the remaining tasks to finish.
             logger.LogInformation("Waiting for all remaining tasks to complete.");
             Task.WaitAll(taskList.ToArray());
 
+            // Dispose of all of the tasks that were created.
             logger.LogInformation("Cleaning up resources.");
             foreach (Task task in taskList)
                 task.Dispose();
 
+            // Convert the 'ConcurrentBag' to a 'List'.
             List<UserPasswordExpirationDetails> usersWithExpiringPasswords = new List<UserPasswordExpirationDetails>();
             foreach (UserPasswordExpirationDetails item in usersWithExpiringPasswordsBag)
             {
                 usersWithExpiringPasswords.Add(item);
             }
+
+            // Sort all of the items alphabetically in the 'List' by each user's last name.
             usersWithExpiringPasswords.Sort((item1, item2) => string.Compare(item1.User.Surname, item2.User.Surname));
 
+            // Generate the response to send back to the client with the parsed user information.
             logger.LogInformation("Returning data to client.");
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "application/json");
             response.WriteString(JsonConverter.ConvertToJson<List<UserPasswordExpirationDetails>>(usersWithExpiringPasswords));
-
             return response;
         }
     }

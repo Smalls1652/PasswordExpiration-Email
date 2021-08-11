@@ -34,38 +34,45 @@ namespace PasswordExpiration.AzFunction
             var logger = executionContext.GetLogger("SendExpirationNotice");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
+            // Get the setting for 'sendMailFromUPN'.
             string mailFromUPN = AppSettings.GetSetting("sendMailFromUPN");
 
+            // Check to see if 'maxAge' was provided in the query.
             string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
             int maxAge;
-            logger.LogInformation($"maxAge: {maxAgeQuery}");
-
             switch (string.IsNullOrEmpty(maxAgeQuery))
             {
+                // If 'maxAge' is null (Not provided), then set the max age to the default.
                 case true:
                     maxAge = 56;
                     break;
-                    
+
+                // Otherwise, set the 'maxAge' to what the user provided.    
                 default:
                     maxAge = Convert.ToInt32(maxAgeQuery);
                     break;
             }
 
+            // Create the 'UserTools' and 'MailTools' objects from the 'GraphClientService'.
             UserTools graphUserTools = new UserTools(graphClientSvc);
             MailTools graphMailTools = new MailTools(graphClientSvc);
 
+            // Search for the user and parse their password expiration details.
             User foundUser = graphUserTools.GetUser(userPrincipalName);
             UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(
                 foundUser,
                 TimeSpan.FromDays(maxAge),
                 TimeSpan.FromDays(10)
             );
+
+            // Generate the email message body with the user's details.
             string emailBody = MailBodyGenerator.CreateMailGenerator(
                 userPasswordExpirationDetails,
                 "./email_employee.html",
                 TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
             );
 
+            // Send the email to the user.
             graphMailTools.SendMessageWithAttachment(
                 mailFromUPN,
                 foundUser,
@@ -74,8 +81,8 @@ namespace PasswordExpiration.AzFunction
                 "./employee_pwdreset.png"
             );
 
+            // Generate an 'Ok' response code back to the client.
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
-
             return response;
         }
 }
