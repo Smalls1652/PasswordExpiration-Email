@@ -66,10 +66,6 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
                 ConfidentialClientApp.Connect();
                 logger.LogInformation("Authentication token has been refreshed.");
             }
-            else
-            {
-                logger.LogInformation("Authentication token is still valid.");
-            }
         }
 
         public string SendApiCall(string endpoint, string apiPostBody, HttpMethod httpMethod)
