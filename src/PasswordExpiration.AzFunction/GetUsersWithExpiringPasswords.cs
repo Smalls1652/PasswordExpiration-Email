@@ -17,19 +17,22 @@ namespace PasswordExpiration.AzFunction
     using Lib.Models.Graph.Users;
 
     using Helpers;
+    using Helpers.Services;
     using Models.PostBody;
 
-    public static class GetUsersWithExpiringPasswords
+    public class GetUsersWithExpiringPasswords
     {
+        private readonly IGraphClientService graphClientSvc;
+        public GetUsersWithExpiringPasswords(IGraphClientService _graphClientSvc)
+        {
+            graphClientSvc = _graphClientSvc;
+        }
+
         [Function("GetUsersWithExpiringPasswords")]
-        public static HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswords/{domainName}")] HttpRequestData req, string domainName, FunctionContext executionContext)
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswords/{domainName}")] HttpRequestData req, string domainName, FunctionContext executionContext)
         {
             var logger = executionContext.GetLogger("GetUsersWithExpiringPasswords");
             logger.LogInformation("C# HTTP trigger function processed a request.");
-
-            string appId = AppSettings.GetSetting("azureAdAppId");
-            string azureAdTenantId = AppSettings.GetSetting("azureAdTenantId");
-            string appSecret = AppSettings.GetSetting("azureAdAppSecret");
 
             string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
             int maxAge;
@@ -61,25 +64,8 @@ namespace PasswordExpiration.AzFunction
                     break;
             }
 
-
-            ApiScopesConfig scopesConfig = new ApiScopesConfig()
-            {
-                Scopes = new string[]{
-                    "https://graph.microsoft.com/.default"
-                }
-            };
-
-            logger.LogInformation("Creating Graph Client.");
-            GraphClient graphClient = new GraphClient(
-                baseUri: new Uri("https://graph.microsoft.com/beta/"),
-                clientId: appId,
-                tenantId: azureAdTenantId,
-                clientSecret: appSecret,
-                apiScopes: scopesConfig
-            );
-
             logger.LogInformation($"Getting users, with the '{domainName}' domain, with expiring passwords.");
-            UserTools graphUserTools = new UserTools(graphClient);
+            UserTools graphUserTools = new UserTools(graphClientSvc);
             List<UserPasswordExpirationDetails> usersWithExpiringPasswords = ExpiringPasswordFinder.GetUsersWithExpiringPasswords(graphUserTools, domainName, lastNameStartsWith, TimeSpan.FromDays(maxAge), TimeSpan.FromDays(10));
 
             logger.LogInformation("Returning data to client.");

@@ -19,18 +19,21 @@ namespace PasswordExpiration.AzFunction
     using Lib.Models.Graph.Core;
 
     using Helpers;
+    using Helpers.Services;
 
-    public static class GetUsersWithExpiringPasswordsBatched
+    public class GetUsersWithExpiringPasswordsBatched
     {
+        private readonly IGraphClientService graphClientSvc;
+        public GetUsersWithExpiringPasswordsBatched(IGraphClientService _graphClientSvc)
+        {
+            graphClientSvc = _graphClientSvc;
+        }
+
         [Function("GetUsersWithExpiringPasswordsBatched")]
-        public static async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswordsBatched/{domainName}")] HttpRequestData req, string domainName, FunctionContext executionContext)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswordsBatched/{domainName}")] HttpRequestData req, string domainName, FunctionContext executionContext)
         {
             var logger = executionContext.GetLogger("GetUsersWithExpiringPasswords");
             logger.LogInformation("C# HTTP trigger function processed a request.");
-
-            string appId = AppSettings.GetSetting("azureAdAppId");
-            string azureAdTenantId = AppSettings.GetSetting("azureAdTenantId");
-            string appSecret = AppSettings.GetSetting("azureAdAppSecret");
 
             string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
             int maxAge;
@@ -48,6 +51,7 @@ namespace PasswordExpiration.AzFunction
 
             logger.LogInformation($"Password max age: {maxAge} days");
 
+            /*
             ApiScopesConfig scopesConfig = new ApiScopesConfig()
             {
                 Scopes = new string[]{
@@ -63,9 +67,12 @@ namespace PasswordExpiration.AzFunction
                 clientSecret: appSecret,
                 apiScopes: scopesConfig
             );
+            */
 
             //logger.LogInformation($"Getting users, with the '{domainName}' domain, with expiring passwords.");
-            UserTools graphUserTools = new UserTools(graphClient);
+            //GraphClient graphClient = executionContext.Items["graphClient"] as GraphClient;
+
+            UserTools graphUserTools = new UserTools(graphClientSvc);
 
             SemaphoreSlim taskThrottler = new SemaphoreSlim(10);
 
@@ -84,7 +91,13 @@ namespace PasswordExpiration.AzFunction
                         {
                             try
                             {
-                                List<UserPasswordExpirationDetails> userPasswordExpirationDetails = ExpiringPasswordFinder.GetUsersWithExpiringPasswords(graphUserTools, domainName, lastNameStartsWith, TimeSpan.FromDays(maxAge), TimeSpan.FromDays(10));
+                                List<UserPasswordExpirationDetails> userPasswordExpirationDetails = ExpiringPasswordFinder.GetUsersWithExpiringPasswords(
+                                    graphUserTools,
+                                    domainName,
+                                    lastNameStartsWith,
+                                    TimeSpan.FromDays(maxAge),
+                                    TimeSpan.FromDays(10)
+                                );
 
                                 foreach (UserPasswordExpirationDetails user in userPasswordExpirationDetails)
                                 {
