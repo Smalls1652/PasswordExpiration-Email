@@ -1,21 +1,28 @@
 using System;
+using System.IO;
 using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.Lib.Models.Graph.Mail
 {
+    using PasswordExpiration.Lib.Core;
+
     public class FileAttachment
     {
         public FileAttachment() {}
 
-        public FileAttachment(string name, string contentBytes, bool isInline)
+        public FileAttachment(string filePath, bool isInline)
         {
-            Name = name;
-            ContentBytes = contentBytes;
+            string resolvedFilePath = Path.GetFullPath(filePath);
+            FileInfo fileItem = new FileInfo(resolvedFilePath);
+
+            DataType = "#microsoft.graph.fileAttachment";
+            Name = fileItem.Name;
+            ContentBytes = System.Convert.ToBase64String(File.ReadAllBytes(fileItem.FullName));
             IsInline = isInline;
         }
 
         [JsonPropertyName("@odata.type")]
-        public string DataType = "#microsoft.graph.fileAttachment";
+        public string DataType { get; set; }
 
         [JsonPropertyName("name")]
         public string Name { get; set; }
@@ -25,5 +32,10 @@ namespace PasswordExpiration.Lib.Models.Graph.Mail
 
         [JsonPropertyName("isInline")]
         public bool IsInline { get; set; }
+
+        public string ConvertToJson()
+        {
+            return JsonConverter.ConvertToJson<FileAttachment>(this);
+        }
     }
 }
