@@ -25,7 +25,7 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
 
         public ApiScopesConfig ScopesConfig { get; set; }
 
-        private X509Certificate2 clientCertificate;
+        private protected X509Certificate2 clientCertificate;
 
         public IConfidentialClientApplication ConfidentialClientApp { get; set; }
 
@@ -42,13 +42,9 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
                 async () => await GetTokenForClientAsync(ScopesConfig.Scopes)
             );
 
-            while (getTokenTask.IsCompleted == false)
-            {
-            }
+            Task.WaitAll(getTokenTask);
 
             AuthenticationResult = getTokenTask.Result;
-
-            this.clientCertificate = null;
         }
 
         public void CreateClientApp()
@@ -56,6 +52,8 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
             ConfidentialClientApp = ConfidentialClientApplicationBuilder.Create(this.ClientId)
                 .WithCertificate(this.clientCertificate)
                 .Build();
+
+            this.clientCertificate = null;
         }
 
         private async Task<AuthenticationResult> GetTokenForClientAsync(IEnumerable<string> scopes)

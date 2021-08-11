@@ -25,7 +25,7 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
 
         public ApiScopesConfig ScopesConfig { get; set; }
 
-        private string clientSecret;
+        private protected string clientSecret;
 
         public IConfidentialClientApplication ConfidentialClientApp { get; set; }
 
@@ -42,14 +42,9 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
                 async () => await GetTokenForClientAsync(ScopesConfig.Scopes)
             );
 
-            while (getTokenTask.IsCompleted == false)
-            {
-            }
+            Task.WaitAll(getTokenTask);
 
             AuthenticationResult = getTokenTask.Result;
-
-            this.clientSecret = null;
-
         }
 
         public void CreateClientApp()
@@ -57,6 +52,8 @@ namespace PasswordExpiration.Lib.Models.Graph.Core
             ConfidentialClientApp = ConfidentialClientApplicationBuilder.Create(this.ClientId)
                 .WithClientSecret(this.clientSecret)
                 .Build();
+
+            this.clientSecret = null;
         }
 
         private async Task<AuthenticationResult> GetTokenForClientAsync(IEnumerable<string> scopes)
