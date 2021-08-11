@@ -10,12 +10,12 @@ namespace PasswordExpiration.Lib.Core.Graph
     using PasswordExpiration.Lib.Models.Graph.Users;
     public class UserTools
     {
-        public UserTools(GraphClient graphClient)
+        public UserTools(IGraphClient graphClient)
         {
             GraphClient = graphClient;
         }
 
-        public GraphClient GraphClient { get; set; }
+        public IGraphClient GraphClient { get; set; }
 
         private string[] userProperties = new string[] {
             "accountEnabled",

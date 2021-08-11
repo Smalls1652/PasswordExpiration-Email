@@ -12,12 +12,12 @@ namespace PasswordExpiration.Lib.Core.Graph
     using PasswordExpiration.Lib.Models.Graph.Users;
     public class MailTools
     {
-        public MailTools(GraphClient graphClient)
+        public MailTools(IGraphClient graphClient)
         {
             GraphClient = graphClient;
         }
 
-        public GraphClient GraphClient { get; set; }
+        public IGraphClient GraphClient { get; set; }
 
         public MailMessage CreateMailMessage(string fromMailAddress, User toUser, string subject, string messageBody)
         {
