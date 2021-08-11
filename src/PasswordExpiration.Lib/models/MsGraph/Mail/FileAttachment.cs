@@ -6,6 +6,9 @@ namespace PasswordExpiration.Lib.Models.Graph.Mail
 {
     using PasswordExpiration.Lib.Core;
 
+    /// <summary>
+    /// An object representing a file attachment to use when generating a mail message.
+    /// </summary>
     public class FileAttachment
     {
         public FileAttachment() {}

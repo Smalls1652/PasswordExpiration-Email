@@ -3,6 +3,10 @@ using System;
 namespace PasswordExpiration.Lib.Models.Core
 {
     using PasswordExpiration.Lib.Models.Graph.Users;
+
+    /// <summary>
+    /// Hosts information about a user account's password expiration.
+    /// </summary>
     public class UserPasswordExpirationDetails
     {
         public UserPasswordExpirationDetails(User user, TimeSpan maxPasswordLife, TimeSpan expiringSoonTimespan)
@@ -52,6 +56,12 @@ namespace PasswordExpiration.Lib.Models.Core
             get => passwordIsExpiringSoon;
         }
         private bool passwordIsExpiringSoon;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="maxDays">The amount of days a password can be valid.</param>
+        /// <param name="daysRemaining">The amount of days to consider a user's password to be close to expiration.</param>
 
         private void ParsePasswordDetails(TimeSpan maxDays, TimeSpan daysRemaining)
         {

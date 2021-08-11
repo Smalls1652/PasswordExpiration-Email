@@ -5,9 +5,19 @@ using System.Globalization;
 namespace PasswordExpiration.Lib.Core
 {
     using PasswordExpiration.Lib.Models.Core;
+
+    /// <summary>
+    /// Hosts methods for enriching email templates.
+    /// </summary>
     public static class MailBodyGenerator
     {
-        
+        /// <summary>
+        /// Enrich an HTML template file with user data.
+        /// </summary>
+        /// <param name="userPwDetailsObj"><See cref="UserPasswordExpirationDetails" /></param>
+        /// <param name="htmlTemplatePath">The path of the HTML template.</param>
+        /// <param name="timeZone">The timezone to enrich the date and time of when the password expires. Can be null, which will default to the local server's timezone.</param>
+        /// <returns></returns>
         public static string CreateMailGenerator(UserPasswordExpirationDetails userPwDetailsObj, string htmlTemplatePath, TimeZoneInfo timeZone)
         {
             string mailBody = null;

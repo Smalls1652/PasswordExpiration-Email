@@ -8,6 +8,10 @@ namespace PasswordExpiration.Lib.Core.Graph
 {
     using PasswordExpiration.Lib.Models.Core;
     using PasswordExpiration.Lib.Models.Graph.Users;
+
+    /// <summary>
+    /// Hosts methods for interacting with Microsoft Graph user API endpoints.
+    /// </summary>
     public class UserTools
     {
         public UserTools(IGraphClient graphClient)
@@ -29,6 +33,11 @@ namespace PasswordExpiration.Lib.Core.Graph
 
         private string ouSearchPath;
 
+        /// <summary>
+        /// Get a user object.
+        /// </summary>
+        /// <param name="userPrincipalName">The user principal name of the user.</param>
+        /// <returns></returns>
         public User GetUser(string userPrincipalName)
         {
             string apiResponse = GraphClient.SendApiCall($"users/{userPrincipalName}?$select={string.Join(",", userProperties)}", null, HttpMethod.Get);
@@ -38,6 +47,13 @@ namespace PasswordExpiration.Lib.Core.Graph
             return userItem;
         }
 
+        /// <summary>
+        /// Get a set of users based off their domain name and what their last name starts with.
+        /// </summary>
+        /// <param name="domainName">The domain name of the users.</param>
+        /// <param name="ouPath">The OU path the users are in.</param>
+        /// <param name="lastNameStartsWith">The first letter to search by. Can be null.</param>
+        /// <returns></returns>
         public List<User> GetUsers(string domainName, string ouPath, string lastNameStartsWith)
         {
             List<User> allUsers = new List<User>();
@@ -97,6 +113,11 @@ namespace PasswordExpiration.Lib.Core.Graph
             return allUsers;
         }
 
+        /// <summary>
+        /// Predicate for filtering user objects by OU path.
+        /// </summary>
+        /// <param name="user">A user object. <seealso cref="User"/></param>
+        /// <returns></returns>
         private bool FilterByOuPath(User user)
         {
             if (string.IsNullOrEmpty(user.OnPremisesDistinguishedName) == false && user.OnPremisesDistinguishedName.EndsWith(ouSearchPath))

@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.Lib.Models.Graph.Mail
 {
+    /// <summary>
+    /// An object that represents the contents and recipents to use when generating a mail message.
+    /// </summary>
     public class Message
     {
         public Message() {}

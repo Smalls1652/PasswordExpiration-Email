@@ -11,6 +11,10 @@ using Microsoft.Identity.Client;
 namespace PasswordExpiration.Lib.Models.Core
 {
     using PasswordExpiration.Lib.Models.Graph.Core;
+
+    /// <summary>
+    /// Hosts the client for interacting with the Microsoft Graph API.
+    /// </summary>
     public class GraphClient : IGraphClient
     {
         public GraphClient(Uri baseUri, string clientId, string tenantId, X509Certificate2 clientCertificate, ApiScopesConfig apiScopes)

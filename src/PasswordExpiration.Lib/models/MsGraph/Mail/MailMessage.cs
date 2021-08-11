@@ -4,6 +4,10 @@ using System.Text.Json.Serialization;
 namespace PasswordExpiration.Lib.Models.Graph.Mail
 {
     using PasswordExpiration.Lib.Core;
+
+    /// <summary>
+    /// An object to represent a mail message to be sent.
+    /// </summary>
     public class MailMessage
     {
         public MailMessage() {}

@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.Lib.Models.Core.Json
 {
+    /// <summary>
+    /// A custom converter for handling <see cref="TimeSpan">TimeSpan</see> typed properties when serializing and deserializing objects for JSONs.
+    /// </summary>
     public class TimeSpanJsonConverter : JsonConverter<TimeSpan>
     {
 

@@ -7,6 +7,9 @@ using Microsoft.Identity.Client;
 
 namespace PasswordExpiration.Lib.Models.Graph.Core
 {
+    /// <summary>
+    /// The confidential client app for authenticating to the Microsoft Graph API when utilizing an application secret.
+    /// </summary>
     public class ConfidentialClientAppWithSecret : IConfidentialClientAppConfig
     {
         public ConfidentialClientAppWithSecret() {}

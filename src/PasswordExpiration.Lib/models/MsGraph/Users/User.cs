@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.Lib.Models.Graph.Users
 {
+    /// <summary>
+    /// An object that represents user data from the Microsoft Graph API.
+    /// </summary>
     public class User
     {
         public User() {}
