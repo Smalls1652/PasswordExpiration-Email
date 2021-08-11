@@ -31,27 +31,40 @@ namespace PasswordExpiration.Lib.Core.Graph
 
         public User GetUser(string userPrincipalName)
         {
-            string apiResponse = GraphClient.SendApiCall($"users/{userPrincipalName}?$select={string.Join(",", userProperties)}", null, HttpMethod.Get, false);
+            string apiResponse = GraphClient.SendApiCall($"users/{userPrincipalName}?$select={string.Join(",", userProperties)}", null, HttpMethod.Get);
 
             User userItem = JsonConverter.ConvertFromJson<User>(apiResponse);
 
             return userItem;
         }
 
-        public List<User> GetUsers(string domainName, string ouPath)
+        public List<User> GetUsers(string domainName, string ouPath, string lastNameStartsWith)
         {
             List<User> allUsers = new List<User>();
 
             Regex nextLinkRegex = new Regex("^https:\\/\\/graph.microsoft.com\\/(?'version'v1\\.0|beta)\\/(?'endpoint'.+?)$");
 
+            List<string> filters = new List<string>(
+                new string[] {
+                    $"(endsWith(userPrincipalName, '@{domainName}'))",
+                    "and (accountEnabled eq true)",
+                }
+            );
+
+            if (!string.IsNullOrEmpty(lastNameStartsWith))
+            {
+                filters.Add($"and (startsWith(surname, '{lastNameStartsWith}'))");
+            }
+
             bool noNextLink = false;
-            string filterString = $"endsWith(userPrincipalName, '@{domainName}')";
+            //string filterString = $"endsWith(userPrincipalName, '@{domainName}') and (accountEnabled eq true)";
+            string filterString = string.Join(" ", filters);
             string apiEndpoint = $"users?$select={string.Join(",", userProperties)}&$filter={filterString}&$count=true";
 
             while (!noNextLink)
             {
-                Console.WriteLine($"--- API Endpoint: {apiEndpoint} ---");
-                string apiResponse = GraphClient.SendApiCall(apiEndpoint, null, HttpMethod.Get, true);
+                //Console.WriteLine($"--- API Endpoint: {apiEndpoint} ---");
+                string apiResponse = GraphClient.SendApiCall(apiEndpoint, null, HttpMethod.Get);
 
                 UserCollection userCollection = JsonConverter.ConvertFromJson<UserCollection>(apiResponse);
 
@@ -69,7 +82,7 @@ namespace PasswordExpiration.Lib.Core.Graph
 
                     default:
                         noNextLink = true;
-                        Console.WriteLine("--- No next link found. Finishing. ---");
+                        //Console.WriteLine("--- No next link found. Finishing. ---");
                         break;
                 }
             }
