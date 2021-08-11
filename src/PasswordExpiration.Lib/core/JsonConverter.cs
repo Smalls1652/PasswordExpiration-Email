@@ -3,11 +3,15 @@ using System.Text.Json;
 
 namespace PasswordExpiration.Lib.Core
 {
+    using Models.Core.Json;
     public static class JsonConverter
     {
         public static T ConvertFromJson<T>(string inputString)
         {
-            T convertedItem = JsonSerializer.Deserialize<T>(inputString);
+            JsonSerializerOptions deserializationOptions = new JsonSerializerOptions();
+            deserializationOptions.Converters.Add(new TimeSpanJsonConverter());
+            
+            T convertedItem = JsonSerializer.Deserialize<T>(inputString, deserializationOptions);
 
             return convertedItem;
         }
@@ -17,6 +21,7 @@ namespace PasswordExpiration.Lib.Core
             JsonSerializerOptions serializerOptions = new JsonSerializerOptions {
                 WriteIndented = true
             };
+            serializerOptions.Converters.Add(new TimeSpanJsonConverter());
             
             string convertedItem = JsonSerializer.Serialize<T>(inputObject, serializerOptions);
 
