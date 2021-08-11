@@ -115,12 +115,11 @@ namespace PasswordExpiration.AzFunction
             foreach (Task task in taskList)
                 task.Dispose();
 
-            // Convert the 'ConcurrentBag' to a 'List'.
-            List<UserPasswordExpirationDetails> usersWithExpiringPasswords = new List<UserPasswordExpirationDetails>();
-            foreach (UserPasswordExpirationDetails item in usersWithExpiringPasswordsBag)
-            {
-                usersWithExpiringPasswords.Add(item);
-            }
+            // Convert the 'ConcurrentBag' to a 'List'. Then clear all of the values out of the 'ConcurrentBag'.
+            List<UserPasswordExpirationDetails> usersWithExpiringPasswords = new List<UserPasswordExpirationDetails>(
+                usersWithExpiringPasswordsBag
+            );
+            usersWithExpiringPasswordsBag.Clear();
 
             // Sort all of the items alphabetically in the 'List' by each user's last name.
             usersWithExpiringPasswords.Sort((item1, item2) => string.Compare(item1.User.Surname, item2.User.Surname));
