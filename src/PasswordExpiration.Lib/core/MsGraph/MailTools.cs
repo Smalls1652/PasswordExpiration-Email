@@ -23,7 +23,7 @@ namespace PasswordExpiration.Lib.Core.Graph
 
         public IGraphClient GraphClient { get; set; }
 
-        public MailMessage CreateMailMessage(string fromMailAddress, User toUser, string subject, string messageBody)
+        public static MailMessage CreateMailMessage(User toUser, string subject, string messageBody)
         {
             Message messageObj = new Message(
                 subject,
@@ -38,7 +38,7 @@ namespace PasswordExpiration.Lib.Core.Graph
             return mailMessageObj;
         }
 
-        public MailMessage CreateMailMessageWithAttachment(string fromMailAddress, User toUser, string subject, string messageBody, string attachmentPath)
+        public static MailMessage CreateMailMessageWithAttachment(User toUser, string subject, string messageBody, string attachmentPath)
         {
 
             FileAttachment[] fileAttachments = new FileAttachment[] {
