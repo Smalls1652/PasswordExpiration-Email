@@ -20,11 +20,9 @@ namespace PasswordExpiration.Lib.Models.Graph.Mail
         [JsonPropertyName("saveToSentItems")]
         public bool SaveToSentItems { get; set; }
 
-        public string ToJsonString()
+        public string ConvertToJson()
         {
-            string convertedString = JsonConverter.ConvertToJson<MailMessage>(this);
-
-            return convertedString;
+            return JsonConverter.ConvertToJson<MailMessage>(this);
         }
     }
 }
