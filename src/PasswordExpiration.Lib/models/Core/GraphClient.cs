@@ -11,7 +11,7 @@ using Microsoft.Identity.Client;
 namespace PasswordExpiration.Lib.Models.Core
 {
     using PasswordExpiration.Lib.Models.Graph.Core;
-    public class GraphClient
+    public class GraphClient : IGraphClient
     {
         public GraphClient(Uri baseUri, string clientId, string tenantId, X509Certificate2 clientCertificate, ApiScopesConfig apiScopes)
         {
@@ -22,6 +22,8 @@ namespace PasswordExpiration.Lib.Models.Core
 
             ConfidentialClientApp = new ConfidentialClientAppWithCertificate(clientId, tenantId, clientCertificate, apiScopes);
             ConfidentialClientApp.Connect();
+
+            IsConnected = true;
         }
 
         public GraphClient(Uri baseUri, string clientId, string tenantId, string clientSecret, ApiScopesConfig apiScopes)
@@ -33,9 +35,13 @@ namespace PasswordExpiration.Lib.Models.Core
 
             ConfidentialClientApp = new ConfidentialClientAppWithSecret(clientId, tenantId, clientSecret, apiScopes);
             ConfidentialClientApp.Connect();
+
+            IsConnected = true;
         }
 
         public Uri BaseUri { get; set; }
+
+        public bool IsConnected { get; set; }
 
         private IConfidentialClientAppConfig ConfidentialClientApp;
 
