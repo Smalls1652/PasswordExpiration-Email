@@ -1,0 +1,104 @@
+{
+    "azureFunctions.projectSubpath": "src\\PasswordExpiration.AzFunction",
+    "azureFunctions.deploySubpath": "src\\PasswordExpiration.AzFunction/bin/Release/net5.0/publish",
+    "azureFunctions.projectLanguage": "C#",
+    "azureFunctions.projectRuntime": "~3",
+    "debug.internalConsoleOptions": "neverOpen",
+    "azureFunctions.preDeployTask": "publish (functions)",
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/email-templates.json"
+            ],
+            "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Email Templates",
+                "description": "An object containing the definitions for different email template types.",
+                "type": "object",
+                "properties": {
+                    "templates": {
+                        "description": "An array of email template items.",
+                        "type": "array",
+                        "items": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "title": "Email Template Item",
+                            "description": "The email template type definition.",
+                            "type": "object",
+                            "properties": {
+                                "templateId": {
+                                    "description": "A unique identifier for the template.",
+                                    "type": "string"
+                                },
+                                "templateName": {
+                                    "description": "The name of the template.",
+                                    "type": "string"
+                                },
+                                "templateHtmlFileName": {
+                                    "description": "The file name of the HTML template to use for the email.",
+                                    "type": "string"
+                                },
+                                "includedAttachments": {
+                                    "description": "An array of the file names to include as attachments for the email template.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "templateId",
+                                "templateName",
+                                "templateHtmlFileName"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "templates"
+                ]
+            }
+        },
+        {
+            "fileMatch": [
+                "/user-search-configs.json"
+            ],
+            "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "User Search Configs",
+                "description": "Defines a list of user search configs.",
+                "type": "object",
+                "properties": {
+                    "searchConfigs": {
+                        "description": "An array of user search configs.",
+                        "type": "array",
+                        "items": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "title": "User Search Config Item",
+                            "description": "The configuration item for searching for users and determining what their password age and email template should be.",
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "description": "A unique identifier for the config.",
+                                    "type": "string"
+                                },
+                                "domainName": {
+                                    "description": "The domain name used in users' user principal name value or email address.",
+                                    "type": "string"
+                                },
+                                "maxPasswordAge": {
+                                    "description": "The number of days the password can be valid.",
+                                    "type": "integer"
+                                },
+                                "emailTemplateId": {
+                                    "description": "The unique identifier for the email template to use.",
+                                    "type": "string",
+                                    "default": "8ab99c2e-e142-4060-b1d8-8a845f3d8ed5"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
