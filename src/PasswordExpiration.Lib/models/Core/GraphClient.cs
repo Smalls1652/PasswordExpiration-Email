@@ -16,6 +16,9 @@ namespace PasswordExpiration.Lib.Models.Core
         public GraphClient(Uri baseUri, string clientId, string tenantId, X509Certificate2 clientCertificate, ApiScopesConfig apiScopes)
         {
             BaseUri = baseUri;
+            httpClient = new HttpClient();
+            httpClient.BaseAddress = baseUri;
+            httpClient.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
 
             ConfidentialClientApp = new ConfidentialClientAppWithCertificate(clientId, tenantId, clientCertificate, apiScopes);
             ConfidentialClientApp.Connect();
@@ -24,6 +27,9 @@ namespace PasswordExpiration.Lib.Models.Core
         public GraphClient(Uri baseUri, string clientId, string tenantId, string clientSecret, ApiScopesConfig apiScopes)
         {
             BaseUri = baseUri;
+            httpClient = new HttpClient();
+            httpClient.BaseAddress = baseUri;
+            httpClient.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
 
             ConfidentialClientApp = new ConfidentialClientAppWithSecret(clientId, tenantId, clientSecret, apiScopes);
             ConfidentialClientApp.Connect();
@@ -33,7 +39,9 @@ namespace PasswordExpiration.Lib.Models.Core
 
         private IConfidentialClientAppConfig ConfidentialClientApp;
 
-        public string SendApiCall(string endpoint, string apiPostBody, HttpMethod httpMethod, bool consistencyLevelEventualEnabled)
+        private static HttpClient httpClient;
+
+        public string SendApiCall(string endpoint, string apiPostBody, HttpMethod httpMethod)
         {
             string apiResponse = null;
 
@@ -43,16 +51,8 @@ namespace PasswordExpiration.Lib.Models.Core
                 ConfidentialClientApp.Connect();
             }
 
-            HttpClient httpClient = new HttpClient();
-            httpClient.BaseAddress = BaseUri;
-
             HttpRequestMessage requestMessage = new HttpRequestMessage(httpMethod, endpoint);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.ConfidentialClientApp.AuthenticationResult.AccessToken);
-
-            if (consistencyLevelEventualEnabled)
-            {
-                httpClient.DefaultRequestHeaders.Add("ConsistencyLevel", "eventual");
-            }
 
             switch (String.IsNullOrEmpty(apiPostBody))
             {
@@ -91,7 +91,6 @@ namespace PasswordExpiration.Lib.Models.Core
                 }
             }
 
-            httpClient.Dispose();
             requestMessage.Dispose();
 
             return apiResponse;
