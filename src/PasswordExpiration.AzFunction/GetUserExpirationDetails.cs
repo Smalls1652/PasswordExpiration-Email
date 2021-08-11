@@ -19,6 +19,9 @@ namespace PasswordExpiration.AzFunction
     using Helpers.Services;
     using Models.PostBody;
 
+    /// <summary>
+    /// Get a specific user's password expiration details.
+    /// </summary>
     public class GetUserExpirationDetails
     {
         private readonly IGraphClientService graphClientSvc;
@@ -27,6 +30,13 @@ namespace PasswordExpiration.AzFunction
             graphClientSvc = _graphClientSvc;
         }
 
+        /// <summary>
+        /// Get a specific user's password expiration details.
+        /// </summary>
+        /// <param name="req">The HTTPRequestData from the client.</param>
+        /// <param name="userPrincipalName">The user principal name supplied in the client's request.</param>
+        /// <param name="executionContext">The Azure Functions FunctionContext.</param>
+        /// <returns></returns>
         [Function("GetUserExpirationDetails")]
         public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUserExpirationDetails/{userPrincipalName}")] HttpRequestData req, string userPrincipalName, FunctionContext executionContext)
         {

@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.AzFunction.Models.Configs.Search
 {
+    /// <summary>
+    /// Config settings for how to search for users, what password policy should be applied, and the email template to use.
+    /// </summary>
     public class UserSearchConfigItem
     {
         public UserSearchConfigItem() {}

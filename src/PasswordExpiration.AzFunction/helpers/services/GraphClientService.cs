@@ -12,6 +12,10 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
 {
     using Lib.Models.Core;
     using Lib.Models.Graph.Core;
+
+    /// <summary>
+    /// Hosts the Microsoft Graph session client and provides methods to send API calls to it. Acts as a service that is shared between functions.
+    /// </summary>
     public class GraphClientService : IGraphClientService
     {
         public GraphClientService(ILogger<GraphClientService> _logger)
@@ -53,10 +57,8 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
             logger.LogInformation("Graph client was created.");
         }
 
-        public string SendApiCall(string endpoint, string apiPostBody, HttpMethod httpMethod)
+        public void TestAuthToken()
         {
-            string apiResponse = null;
-
             DateTimeOffset currentDateTime = DateTimeOffset.Now;
             if (currentDateTime >= ConfidentialClientApp.AuthenticationResult.ExpiresOn)
             {
@@ -64,10 +66,21 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
                 ConfidentialClientApp.Connect();
                 logger.LogInformation("Authentication token has been refreshed.");
             }
+            else
+            {
+                logger.LogInformation("Authentication token is still valid.");
+            }
+        }
+
+        public string SendApiCall(string endpoint, string apiPostBody, HttpMethod httpMethod)
+        {
+            string apiResponse = null;
 
             HttpRequestMessage requestMessage = new HttpRequestMessage(httpMethod, endpoint);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.ConfidentialClientApp.AuthenticationResult.AccessToken);
 
+            TestAuthToken();
+            
             switch (String.IsNullOrEmpty(apiPostBody))
             {
                 case false:

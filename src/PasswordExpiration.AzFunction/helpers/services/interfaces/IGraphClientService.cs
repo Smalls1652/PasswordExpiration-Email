@@ -7,5 +7,7 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
     public interface IGraphClientService : IGraphClient
     {
         void Connect();
+
+        void TestAuthToken();
     }
 }

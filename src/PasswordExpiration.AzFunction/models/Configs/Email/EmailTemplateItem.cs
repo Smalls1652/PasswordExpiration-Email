@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.AzFunction.Models.Configs.Email
 {
+    /// <summary>
+    /// Config settings for an email template to utilize when sending to users.
+    /// </summary>
     public class EmailTemplateItem
     {
         public EmailTemplateItem() {}
