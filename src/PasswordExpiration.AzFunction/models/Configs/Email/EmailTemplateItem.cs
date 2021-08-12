@@ -1,7 +1,8 @@
 using System;
+using System.IO;
 using System.Text.Json.Serialization;
 
-namespace PasswordExpiration.AzFunction.Models.Configs.Email
+namespace PasswordExpiration.AzFunction.Models.Configs
 {
     /// <summary>
     /// Config settings for an email template to utilize when sending to users.
@@ -18,8 +19,11 @@ namespace PasswordExpiration.AzFunction.Models.Configs.Email
 
         [JsonPropertyName("templateHtmlFileName")]
         public string TemplateHtmlFileName { get; set; }
-
+        
         [JsonPropertyName("includedAttachments")]
         public string[] IncludedAttachments { get; set; }
+
+        [JsonPropertyName("isCustom")]
+        public bool IsCustom { get; set; }
     }
 }

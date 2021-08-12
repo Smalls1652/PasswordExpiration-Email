@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace PasswordExpiration.AzFunction.Models.Configs.Email
+namespace PasswordExpiration.AzFunction.Models.Configs
 {
     /// <summary>
     /// An object hosting an array of <see cref="EmailTemplateItem">EmailTemplateItem</see> objects.
