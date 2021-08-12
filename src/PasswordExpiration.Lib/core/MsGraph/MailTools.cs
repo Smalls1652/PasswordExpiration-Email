@@ -38,12 +38,13 @@ namespace PasswordExpiration.Lib.Core.Graph
             return mailMessageObj;
         }
 
-        public static MailMessage CreateMailMessageWithAttachment(User toUser, string subject, string messageBody, string attachmentPath)
+        public static MailMessage CreateMailMessageWithAttachment(User toUser, string subject, string messageBody, string[] attachmentsPath)
         {
-
-            FileAttachment[] fileAttachments = new FileAttachment[] {
-                new FileAttachment(attachmentPath, true)
-            };
+            List<FileAttachment> fileAttachments = new List<FileAttachment>();
+            foreach (string fileItemPath in attachmentsPath)
+            {
+                fileAttachments.Add(new FileAttachment(fileItemPath, true));
+            }
 
             Message messageObj = new Message(
                 subject,
@@ -51,7 +52,7 @@ namespace PasswordExpiration.Lib.Core.Graph
                 new Recipient[] {
                     new Recipient(new EmailAddress(toUser.UserPrincipalName))
                 },
-                fileAttachments
+                fileAttachments.ToArray()
             );
 
             MailMessage mailMessageObj = new MailMessage(messageObj, false);
@@ -95,12 +96,13 @@ namespace PasswordExpiration.Lib.Core.Graph
         /// <param name="subject">The subject of the message.</param>
         /// <param name="messageBody">The HTML contents of the email.</param>
         /// <param name="attachmentPath">The file path of the attachment.</param>
-        public void SendMessageWithAttachment(string fromMailAddress, User toUser, string subject, string messageBody, string attachmentPath)
+        public void SendMessageWithAttachment(string fromMailAddress, User toUser, string subject, string messageBody, string[] attachmentsPath)
         {
-
-            FileAttachment[] fileAttachments = new FileAttachment[] {
-                new FileAttachment(attachmentPath, true)
-            };
+            List<FileAttachment> fileAttachments = new List<FileAttachment>();
+            foreach (string fileItemPath in attachmentsPath)
+            {
+                fileAttachments.Add(new FileAttachment(fileItemPath, true));
+            }
 
             Message messageObj = new Message(
                 subject,
@@ -108,7 +110,7 @@ namespace PasswordExpiration.Lib.Core.Graph
                 new Recipient[] {
                     new Recipient(new EmailAddress(toUser.UserPrincipalName))
                 },
-                fileAttachments
+                fileAttachments.ToArray()
             );
 
             MailMessage mailMessageObj = new MailMessage(messageObj, false);
