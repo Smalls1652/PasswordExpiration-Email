@@ -3,7 +3,8 @@
         {
             "templateId": "8ab99c2e-e142-4060-b1d8-8a845f3d8ed5",
             "templateName": "Default",
-            "templateHtmlFileName": "email.html"
+            "templateHtmlFileName": "email.html",
+            "isCustom": false
         }
     ]
 }

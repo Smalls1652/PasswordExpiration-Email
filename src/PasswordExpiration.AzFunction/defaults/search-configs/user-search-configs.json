@@ -2,6 +2,7 @@
     "searchConfigs": [
         {
             "id": "65ef0352-9545-42f8-b70f-6dd21fa8df6b",
+            "name": "Default",
             "maxPasswordAge": 90,
             "emailTemplateId": "8ab99c2e-e142-4060-b1d8-8a845f3d8ed5"
         }

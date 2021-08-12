@@ -43,6 +43,10 @@
                                     "items": {
                                         "type": "string"
                                     }
+                                },
+                                "isCustom": {
+                                    "description": "If the config is custom.",
+                                    "type": "boolean"
                                 }
                             },
                             "required": [
@@ -81,8 +85,16 @@
                                     "description": "A unique identifier for the config.",
                                     "type": "string"
                                 },
+                                "name": {
+                                    "description": "The name of the search config.",
+                                    "type": "string"
+                                },
                                 "domainName": {
                                     "description": "The domain name used in users' user principal name value or email address.",
+                                    "type": "string"
+                                },
+                                "ouPath": {
+                                    "description": "The on-premise OU path, if applicable, to filter the users by.",
                                     "type": "string"
                                 },
                                 "maxPasswordAge": {
@@ -95,6 +107,29 @@
                                     "default": "8ab99c2e-e142-4060-b1d8-8a845f3d8ed5"
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "fileMatch": [
+                "/automated-searches.json"
+            ],
+            "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "title": "Automated User Search Config",
+                "description": "Defines a list of user search configs that will be automatically ran.",
+                "type": "object",
+                "properties": {
+                    "automatedSearchConfigs": {
+                        "description": "An array of user search config IDs to automatically run..",
+                        "type": "array",
+                        "items": {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "title": "User Search Config Item",
+                            "description": "The configuration item for searching for users and determining what their password age and email template should be.",
+                            "type": "string"
                         }
                     }
                 }
