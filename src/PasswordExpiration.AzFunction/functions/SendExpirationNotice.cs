@@ -16,18 +16,22 @@ namespace PasswordExpiration.AzFunction
     using Lib.Models.Graph.Users;
 
     using Helpers;
+    using Models.Configs;
     using Helpers.Services;
 
     public class SendExpirationNotice
     {
+        private readonly IFunctionsConfigService functionsConfigSvc;
         private readonly IGraphClientService graphClientSvc;
-        public SendExpirationNotice(IGraphClientService _graphClientSvc)
+        public SendExpirationNotice(IFunctionsConfigService _functionsConfigSvc, IGraphClientService _graphClientSvc)
         {
+            functionsConfigSvc = _functionsConfigSvc;
             graphClientSvc = _graphClientSvc;
         }
 
         [Function("SendExpirationNotice")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "SendExpirationNotice/{userPrincipalName}")] HttpRequestData req,
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "sendExpirationNotice/{configId}/{userPrincipalName}")]HttpRequestData req,
+            string configId,
             string userPrincipalName,
             FunctionContext executionContext)
         {
@@ -37,21 +41,8 @@ namespace PasswordExpiration.AzFunction
             // Get the setting for 'sendMailFromUPN'.
             string mailFromUPN = AppSettings.GetSetting("sendMailFromUPN");
 
-            // Check to see if 'maxAge' was provided in the query.
-            string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
-            int maxAge;
-            switch (string.IsNullOrEmpty(maxAgeQuery))
-            {
-                // If 'maxAge' is null (Not provided), then set the max age to the default.
-                case true:
-                    maxAge = 56;
-                    break;
-
-                // Otherwise, set the 'maxAge' to what the user provided.    
-                default:
-                    maxAge = Convert.ToInt32(maxAgeQuery);
-                    break;
-            }
+            UserSearchConfigItem searchConfigItem = functionsConfigSvc.GetUserSearchConfig(configId);
+            EmailTemplateItem emailTemplateItem = functionsConfigSvc.GetEmailTemplate(searchConfigItem.EmailTemplateId);
 
             // Create the 'UserTools' and 'MailTools' objects from the 'GraphClientService'.
             UserTools graphUserTools = new UserTools(graphClientSvc);
@@ -61,14 +52,14 @@ namespace PasswordExpiration.AzFunction
             User foundUser = graphUserTools.GetUser(userPrincipalName);
             UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(
                 foundUser,
-                TimeSpan.FromDays(maxAge),
+                TimeSpan.FromDays(searchConfigItem.MaxPasswordAge),
                 TimeSpan.FromDays(10)
             );
 
             // Generate the email message body with the user's details.
             string emailBody = MailBodyGenerator.CreateMailGenerator(
                 userPasswordExpirationDetails,
-                "./email_employee.html",
+                functionsConfigSvc.GetEmailTemplateHtmlFileFullPath(emailTemplateItem),
                 TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
             );
 
@@ -78,7 +69,7 @@ namespace PasswordExpiration.AzFunction
                 foundUser,
                 $"Alert: Password Expiration Notice ({userPasswordExpirationDetails.PasswordExpiresIn.Value.Days} days)",
                 emailBody,
-                "./employee_pwdreset.png"
+                functionsConfigSvc.GetEmailTemplateAttachmentFileFullPath(emailTemplateItem).ToArray()
             );
 
             // Generate an 'Ok' response code back to the client.

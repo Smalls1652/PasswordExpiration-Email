@@ -19,37 +19,42 @@ namespace PasswordExpiration.AzFunction
     using Lib.Models.Graph.Core;
 
     using Helpers;
+    using Models.Configs;
     using Helpers.Services;
 
-    public class GetUsersWithExpiringPasswordsBatched
+    public class GetUsersWithExpiringPasswords
     {
+        private readonly IFunctionsConfigService functionsConfigSvc;
         private readonly IGraphClientService graphClientSvc;
-        public GetUsersWithExpiringPasswordsBatched(IGraphClientService _graphClientSvc)
+        public GetUsersWithExpiringPasswords(IFunctionsConfigService _functionsConfigSvc, IGraphClientService _graphClientSvc)
         {
+            functionsConfigSvc = _functionsConfigSvc;
             graphClientSvc = _graphClientSvc;
         }
 
         [Function("GetUsersWithExpiringPassword")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswords/{domainName}")] HttpRequestData req, string domainName, FunctionContext executionContext)
+        public async Task<HttpResponseData> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswords/{configId}")] HttpRequestData req,
+            string configId,
+            FunctionContext executionContext
+        )
         {
             var logger = executionContext.GetLogger("GetUsersWithExpiringPasswords");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            // Check to see if 'maxAge' was provided in the query.
-            string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
-            int maxAge;
-            switch (string.IsNullOrEmpty(maxAgeQuery))
+            UserSearchConfigItem userSearchConfig;
+            switch (string.IsNullOrEmpty(configId))
             {
-                // If 'maxAge' is null (Not provided), then set the max age to the default.
                 case true:
-                    maxAge = 56;
+                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig("65ef0352-9545-42f8-b70f-6dd21fa8df6b");
                     break;
 
-                // Otherwise, set the 'maxAge' to what the user provided.    
                 default:
-                    maxAge = Convert.ToInt32(maxAgeQuery);
+                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig(configId);
                     break;
             }
+
+            logger.LogInformation($"User Search Config to be used: {userSearchConfig.Name} ({userSearchConfig.Id})");
 
             // Create the 'UserTools' object from the GraphClientService.
             UserTools graphUserTools = new UserTools(graphClientSvc);
@@ -72,7 +77,7 @@ namespace PasswordExpiration.AzFunction
 
                 // Convert the current loop integer (i) value into the corresponding UTF32 character.
                 string lastNameStartsWith = Char.ConvertFromUtf32(i);
-                logger.LogInformation($"Creating task for getting users, under the '{domainName}' domain and their last name starts with '{lastNameStartsWith}', with expiring passwords.");
+                logger.LogInformation($"Creating task for getting users, under the '{userSearchConfig.DomainName}' domain and their last name starts with '{lastNameStartsWith}', with expiring passwords.");
 
                 // Create the task to get the users.
                 taskList.Add(
@@ -84,9 +89,10 @@ namespace PasswordExpiration.AzFunction
                                 // Get all of the users matching the search criteria.
                                 List<UserPasswordExpirationDetails> userPasswordExpirationDetails = ExpiringPasswordFinder.GetUsersWithExpiringPasswords(
                                     graphUserTools,
-                                    domainName,
+                                    userSearchConfig.DomainName,
+                                    userSearchConfig.OuPath,
                                     lastNameStartsWith,
-                                    TimeSpan.FromDays(maxAge),
+                                    TimeSpan.FromDays(userSearchConfig.MaxPasswordAge),
                                     TimeSpan.FromDays(10)
                                 );
 

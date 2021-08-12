@@ -17,16 +17,18 @@ namespace PasswordExpiration.AzFunction
 
     using Helpers;
     using Helpers.Services;
-    using Models.PostBody;
+    using Models.Configs;
 
     /// <summary>
     /// Get a specific user's password expiration details.
     /// </summary>
     public class GetUserExpirationDetails
     {
+        private readonly IFunctionsConfigService functionsConfigSvc;
         private readonly IGraphClientService graphClientSvc;
-        public GetUserExpirationDetails(IGraphClientService _graphClientSvc)
+        public GetUserExpirationDetails(IFunctionsConfigService _functionsConfigSvc, IGraphClientService _graphClientSvc)
         {
+            functionsConfigSvc = _functionsConfigSvc;
             graphClientSvc = _graphClientSvc;
         }
 
@@ -38,33 +40,40 @@ namespace PasswordExpiration.AzFunction
         /// <param name="executionContext">The Azure Functions FunctionContext.</param>
         /// <returns></returns>
         [Function("GetUserExpirationDetails")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUserExpirationDetails/{userPrincipalName}")] HttpRequestData req, string userPrincipalName, FunctionContext executionContext)
+        public HttpResponseData Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUserExpirationDetails/{userPrincipalName}/{configId?}")]HttpRequestData req,
+            string userPrincipalName,
+            string configId,
+            FunctionContext executionContext
+        )
         {
             var logger = executionContext.GetLogger("GetUserExpirationDetails");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            // Check to see if 'maxAge' was provided in the query.
-            string maxAgeQuery = HttpUtility.ParseQueryString(req.Url.Query).Get("maxAge");
-            int maxAge;
-            switch (string.IsNullOrEmpty(maxAgeQuery))
+            UserSearchConfigItem userSearchConfig;
+            switch (string.IsNullOrEmpty(configId))
             {
-                // If 'maxAge' is null (Not provided), then set the max age to the default.
                 case true:
-                    maxAge = 56;
+                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig("65ef0352-9545-42f8-b70f-6dd21fa8df6b");
                     break;
 
-                // Otherwise, set the 'maxAge' to what the user provided.    
                 default:
-                    maxAge = Convert.ToInt32(maxAgeQuery);
+                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig(configId);
                     break;
             }
+
+            logger.LogInformation($"User Search Config to be used: {userSearchConfig.Name} ({userSearchConfig.Id})");
 
             // Create the 'UserTools' object from the GraphClientService.
             UserTools graphUserTools = new UserTools(graphClientSvc);
 
             // Search for the user and parse their password expiration details.
             User foundUser = graphUserTools.GetUser(userPrincipalName);
-            UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(foundUser, TimeSpan.FromDays(maxAge), TimeSpan.FromDays(10));
+            UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(
+                foundUser,
+                TimeSpan.FromDays(userSearchConfig.MaxPasswordAge),
+                TimeSpan.FromDays(10)
+            );
 
             // Generate the response to send back to the client with the parsed user information.
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
@@ -72,5 +81,5 @@ namespace PasswordExpiration.AzFunction
             response.WriteString(JsonConverter.ConvertToJson<UserPasswordExpirationDetails>(userPasswordExpirationDetails));
             return response;
         }
-}
+    }
 }
