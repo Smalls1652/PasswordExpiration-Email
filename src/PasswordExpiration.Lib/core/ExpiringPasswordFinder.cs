@@ -19,6 +19,7 @@ namespace PasswordExpiration.Lib
         /// </summary>
         /// <param name="userTools"><See cref="UserTools" /></param>
         /// <param name="domainName">The domain name of the users.</param>
+        /// <param name="ouPath">The path to the on-premise AD OU.</param>
         /// <param name="lastNameStartsWith">The first letter to search by. Can be null.</param>
         /// <param name="maxPasswordAge">The amount of days a password can be valid.</param>
         /// <param name="closeToExpirationTimespan">The amount of days to consider a user's password to be close to expiration.</param>
@@ -26,11 +27,12 @@ namespace PasswordExpiration.Lib
         public static List<UserPasswordExpirationDetails> GetUsersWithExpiringPasswords(
             UserTools userTools,
             string domainName,
+            string ouPath,
             string lastNameStartsWith,
             TimeSpan maxPasswordAge,
             TimeSpan closeToExpirationTimespan)
         {
-            List<User> foundUsers = userTools.GetUsers(domainName, null, lastNameStartsWith);
+            List<User> foundUsers = userTools.GetUsers(domainName, ouPath, lastNameStartsWith);
 
             List<UserPasswordExpirationDetails> userPasswordExpirationDetails = new List<UserPasswordExpirationDetails>();
             foreach (User userItem in foundUsers)
