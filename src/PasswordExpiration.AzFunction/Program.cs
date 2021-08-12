@@ -18,6 +18,7 @@ namespace PasswordExpiration.AzFunction
                     services =>
                     {
                         services.AddSingleton<IGraphClientService, GraphClientService>();
+                        services.AddSingleton<IFunctionsConfigService, FunctionsConfigService>();
                     }
                 )
                 .Build();
