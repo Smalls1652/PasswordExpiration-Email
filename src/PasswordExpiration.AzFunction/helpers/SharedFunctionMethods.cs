@@ -150,6 +150,7 @@ namespace PasswordExpiration.AzFunction.Helpers
         /// <param name="emailTemplateFilePath">The file path to the HTML file for the email template to use.</param>
         /// <param name="emailTemplateFileAttachments">The file paths to the attachments to add to the email.</param>
         public static void SendEmailToUser(
+            ILogger logger,
             MailTools mailTools,
             string mailFromUPN,
             UserPasswordExpirationDetails userItem,
@@ -164,8 +165,9 @@ namespace PasswordExpiration.AzFunction.Helpers
                     TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
                 );
 
-                // Send the email to the user.
-                mailTools.SendMessageWithAttachment(
+            // Send the email to the user.
+            logger.LogInformation($"Sending email to '{userItem.User.UserPrincipalName}'.");
+            mailTools.SendMessageWithAttachment(
                     mailFromUPN,
                     userItem.User,
                     $"Alert: Password Expiration Notice ({userItem.PasswordExpiresIn.Value.Days} days)",
