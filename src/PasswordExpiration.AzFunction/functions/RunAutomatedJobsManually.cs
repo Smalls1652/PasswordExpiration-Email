@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Extensions;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
 namespace PasswordExpiration.AzFunction
@@ -22,28 +22,24 @@ namespace PasswordExpiration.AzFunction
     using Models.Configs;
     using Helpers.Services;
 
-    public class RunAutomatedJobs
+    public class RunAutomatedJobsManually
     {
         private readonly IFunctionsConfigService functionsConfigSvc;
         private readonly IGraphClientService graphClientSvc;
-        public RunAutomatedJobs(IFunctionsConfigService _functionsConfigSvc, IGraphClientService _graphClientSvc)
+        public RunAutomatedJobsManually(IFunctionsConfigService _functionsConfigSvc, IGraphClientService _graphClientSvc)
         {
             functionsConfigSvc = _functionsConfigSvc;
             graphClientSvc = _graphClientSvc;
         }
 
-        [Function("RunAutomatedJobs")]
-        public async void Run(
-            [TimerTrigger("0 0 23 * * *")] TimerInfo timer,
+        [Function("RunAutomatedJobsManually")]
+        public async Task<HttpResponseData> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "RunAutomatedJobsManually")] HttpRequestData req,
             FunctionContext executionContext
         )
         {
-            ILogger logger = executionContext.GetLogger("RunAutomatedJobs");
-            if (timer.IsPastDue)
-            {
-                logger.LogInformation("Timer is running late!");
-            }
-            logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+            ILogger logger = executionContext.GetLogger("RunAutomatedJobsManually");
+            logger.LogInformation("C# HTTP trigger function processed a request.");
 
             // Get the setting for 'sendMailFromUPN'.
             string mailFromUPN = AppSettings.GetSetting("sendMailFromUPN");
@@ -85,6 +81,9 @@ namespace PasswordExpiration.AzFunction
 
                 logger.LogInformation("All automated jobs have finished running.");
             }
+
+            HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
+            return response;
         }
     }
 }
