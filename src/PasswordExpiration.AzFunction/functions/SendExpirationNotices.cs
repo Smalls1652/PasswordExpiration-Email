@@ -72,6 +72,7 @@ namespace PasswordExpiration.AzFunction
             foreach (UserPasswordExpirationDetails userItem in usersWithExpiringPasswords)
             {
                 SharedFunctionMethods.SendEmailToUser(
+                    logger,
                     graphMailTools,
                     mailFromUPN,
                     userItem,
