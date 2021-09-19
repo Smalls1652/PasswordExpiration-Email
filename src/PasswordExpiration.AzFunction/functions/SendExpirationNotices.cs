@@ -77,7 +77,8 @@ namespace PasswordExpiration.AzFunction
                     mailFromUPN,
                     userItem,
                     functionsConfigSvc.GetEmailTemplateHtmlFileFullPath(emailTemplate),
-                    functionsConfigSvc.GetEmailTemplateAttachmentFileFullPath(emailTemplate).ToArray()
+                    functionsConfigSvc.GetEmailTemplateAttachmentFileFullPath(emailTemplate).ToArray(),
+                    false
                 );
 
                 logger.LogInformation($"Email has been sent to '{userItem.User.UserPrincipalName}'.");
