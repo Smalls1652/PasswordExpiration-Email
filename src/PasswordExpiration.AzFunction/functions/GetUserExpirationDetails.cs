@@ -50,26 +50,16 @@ namespace PasswordExpiration.AzFunction
             var logger = executionContext.GetLogger("GetUserExpirationDetails");
             logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            UserSearchConfigItem userSearchConfig;
-            switch (string.IsNullOrEmpty(configId))
-            {
-                case true:
-                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig("65ef0352-9545-42f8-b70f-6dd21fa8df6b");
-                    break;
-
-                default:
-                    userSearchConfig = functionsConfigSvc.GetUserSearchConfig(configId);
-                    break;
-            }
+            UserSearchConfigItem userSearchConfig = SharedFunctionMethods.GetUserSearchConfigItem(functionsConfigSvc, configId);
 
             logger.LogInformation($"User Search Config to be used: {userSearchConfig.Name} ({userSearchConfig.Id})");
 
             // Create the 'UserTools' object from the GraphClientService.
-            UserTools graphUserTools = new UserTools(graphClientSvc);
+            UserTools graphUserTools = new(graphClientSvc);
 
             // Search for the user and parse their password expiration details.
             User foundUser = graphUserTools.GetUser(userPrincipalName);
-            UserPasswordExpirationDetails userPasswordExpirationDetails = new UserPasswordExpirationDetails(
+            UserPasswordExpirationDetails userPasswordExpirationDetails = new(
                 foundUser,
                 TimeSpan.FromDays(userSearchConfig.MaxPasswordAge),
                 TimeSpan.FromDays(10)
