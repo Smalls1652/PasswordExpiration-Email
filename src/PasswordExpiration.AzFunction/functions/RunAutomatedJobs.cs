@@ -34,7 +34,10 @@ namespace PasswordExpiration.AzFunction
 
         [Function("RunAutomatedJobs")]
         public async void Run(
-            [TimerTrigger("0 0 23 * * *")] TimerInfo timer,
+            [TimerTrigger(
+                schedule: "0 0 23 * * *",
+                RunOnStartup = false
+            )] TimerInfo timer,
             FunctionContext executionContext
         )
         {
@@ -79,7 +82,8 @@ namespace PasswordExpiration.AzFunction
                         mailFromUPN,
                         userItem,
                         emailTemplatePath,
-                        emailTemplateAttachmentPaths
+                        emailTemplateAttachmentPaths,
+                        false
                     );
                 }
 
