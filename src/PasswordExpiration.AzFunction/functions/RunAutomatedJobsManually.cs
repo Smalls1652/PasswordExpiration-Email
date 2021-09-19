@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -20,6 +21,7 @@ namespace PasswordExpiration.AzFunction
 
     using Helpers;
     using Models.Configs;
+    using Models.BodyInputs;
     using Helpers.Services;
 
     public class RunAutomatedJobsManually
@@ -34,12 +36,24 @@ namespace PasswordExpiration.AzFunction
 
         [Function("RunAutomatedJobsManually")]
         public async Task<HttpResponseData> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "RunAutomatedJobsManually")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, new string[] { "get", "post"}, Route = "RunAutomatedJobsManually")] HttpRequestData req,
             FunctionContext executionContext
         )
         {
             ILogger logger = executionContext.GetLogger("RunAutomatedJobsManually");
             logger.LogInformation("C# HTTP trigger function processed a request.");
+
+            bool jobIsTest = false;
+
+            byte[] reqBodyByteArray = new byte[req.Body.Length];
+            await req.Body.ReadAsync(reqBodyByteArray, 0, ((int)req.Body.Length));
+            string reqBodyString = Encoding.UTF8.GetString(reqBodyByteArray);
+
+            if (reqBodyString != null)
+            {
+                TestBody reqBody = JsonConverter.ConvertFromJson<TestBody>(reqBodyString);
+                jobIsTest = reqBody.IsTest;
+            }
 
             // Get the setting for 'sendMailFromUPN'.
             string mailFromUPN = AppSettings.GetSetting("sendMailFromUPN");
@@ -75,7 +89,8 @@ namespace PasswordExpiration.AzFunction
                         mailFromUPN,
                         userItem,
                         emailTemplatePath,
-                        emailTemplateAttachmentPaths
+                        emailTemplateAttachmentPaths,
+                        jobIsTest
                     );
                 }
 
