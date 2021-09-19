@@ -31,8 +31,6 @@ namespace PasswordExpiration.Lib.Core.Graph
             "onPremisesDistinguishedName"
         };
 
-        private string ouSearchPath;
-
         /// <summary>
         /// Get a user object.
         /// </summary>
@@ -105,29 +103,22 @@ namespace PasswordExpiration.Lib.Core.Graph
 
             if (!string.IsNullOrEmpty(ouPath))
             {
-                ouSearchPath = ouPath;
-                allUsers = allUsers.FindAll(FilterByOuPath);
-                ouSearchPath = null;
+                allUsers = allUsers.FindAll(
+                    (user) =>
+                    {
+                        if (string.IsNullOrEmpty(user.OnPremisesDistinguishedName) == false && user.OnPremisesDistinguishedName.EndsWith(ouPath))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                );
             }
 
             return allUsers;
-        }
-
-        /// <summary>
-        /// Predicate for filtering user objects by OU path.
-        /// </summary>
-        /// <param name="user">A user object. <seealso cref="User"/></param>
-        /// <returns></returns>
-        private bool FilterByOuPath(User user)
-        {
-            if (string.IsNullOrEmpty(user.OnPremisesDistinguishedName) == false && user.OnPremisesDistinguishedName.EndsWith(ouSearchPath))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
         }
     }
 }
