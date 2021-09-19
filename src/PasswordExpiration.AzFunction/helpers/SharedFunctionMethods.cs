@@ -50,7 +50,7 @@ namespace PasswordExpiration.AzFunction.Helpers
         {
             return new List<T>(inputConcurrentBag);
         }
-        
+
         /// <summary>
         /// Get the password expiration details about all of the users matching the search criteria.
         /// </summary>
@@ -155,25 +155,34 @@ namespace PasswordExpiration.AzFunction.Helpers
             string mailFromUPN,
             UserPasswordExpirationDetails userItem,
             string emailTemplateFilePath,
-            string[] emailTemplateFileAttachments
+            string[] emailTemplateFileAttachments,
+            bool isTestRun
         )
         {
             // Generate the email message body with the user's details.
-                string emailBody = MailBodyGenerator.CreateMailGenerator(
-                    userItem,
-                    emailTemplateFilePath,
-                    TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
-                );
+            string emailBody = MailBodyGenerator.CreateMailGenerator(
+                userItem,
+                emailTemplateFilePath,
+                TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
+            );
 
             // Send the email to the user.
             logger.LogInformation($"Sending email to '{userItem.User.UserPrincipalName}'.");
-            mailTools.SendMessageWithAttachment(
-                    mailFromUPN,
-                    userItem.User,
-                    $"Alert: Password Expiration Notice ({userItem.PasswordExpiresIn.Value.Days} days)",
-                    emailBody,
-                    emailTemplateFileAttachments
-                );
+
+            if (!isTestRun)
+            {
+                mailTools.SendMessageWithAttachment(
+                        mailFromUPN,
+                        userItem.User,
+                        $"Alert: Password Expiration Notice ({userItem.PasswordExpiresIn.Value.Days} days)",
+                        emailBody,
+                        emailTemplateFileAttachments
+                    );
+            }
+            else
+            {
+                logger.LogWarning("**Email not sent due to test mode.**");
+            }
         }
     }
 }
