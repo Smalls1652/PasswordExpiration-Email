@@ -81,8 +81,8 @@ namespace PasswordExpiration.AzFunction
                         graphMailTools,
                         mailFromUPN,
                         userItem,
-                        emailTemplatePath,
-                        emailTemplateAttachmentPaths,
+                        functionsConfigSvc,
+                        searchConfig,
                         false
                     );
                 }

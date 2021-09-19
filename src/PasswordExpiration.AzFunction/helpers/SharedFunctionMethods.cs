@@ -154,34 +154,44 @@ namespace PasswordExpiration.AzFunction.Helpers
             MailTools mailTools,
             string mailFromUPN,
             UserPasswordExpirationDetails userItem,
-            string emailTemplateFilePath,
-            string[] emailTemplateFileAttachments,
+            IFunctionsConfigService functionsConfigSvc,
+            UserSearchConfigItem searchConfig,
             bool isTestRun
         )
         {
+            EmailTemplateItem emailTemplate = functionsConfigSvc.GetEmailTemplate(searchConfig.EmailTemplateId);
+            string emailTemplatePath = functionsConfigSvc.GetEmailTemplateHtmlFileFullPath(emailTemplate);
+            string[] emailTemplateFileAttachments = functionsConfigSvc.GetEmailTemplateAttachmentFileFullPath(emailTemplate).ToArray();
+
             // Generate the email message body with the user's details.
             string emailBody = MailBodyGenerator.CreateMailGenerator(
                 userItem,
-                emailTemplateFilePath,
+                emailTemplatePath,
                 TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")
             );
 
             // Send the email to the user.
-            logger.LogInformation($"Sending email to '{userItem.User.UserPrincipalName}'.");
-
-            if (!isTestRun)
+            if ((searchConfig.EmailIntervalsEnabled == true && new List<int>(searchConfig.EmailIntervalDays).Contains(userItem.PasswordExpiresIn.Value.Days)) || (searchConfig.EmailIntervalsEnabled == false))
             {
-                mailTools.SendMessageWithAttachment(
-                        mailFromUPN,
-                        userItem.User,
-                        $"Alert: Password Expiration Notice ({userItem.PasswordExpiresIn.Value.Days} days)",
-                        emailBody,
-                        emailTemplateFileAttachments
-                    );
+                logger.LogInformation($"Sending email to '{userItem.User.UserPrincipalName}'.");
+                if (!isTestRun)
+                {
+                    mailTools.SendMessageWithAttachment(
+                            mailFromUPN,
+                            userItem.User,
+                            $"Alert: Password Expiration Notice ({userItem.PasswordExpiresIn.Value.Days} days)",
+                            emailBody,
+                            emailTemplateFileAttachments
+                        );
+                }
+                else
+                {
+                    logger.LogWarning("**Email not sent due to test mode.**");
+                }
             }
             else
             {
-                logger.LogWarning("**Email not sent due to test mode.**");
+                logger.LogWarning($"Skipping '{userItem.User.UserPrincipalName}' since their password expiration is not in the interval period.");
             }
         }
     }

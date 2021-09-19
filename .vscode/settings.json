@@ -101,6 +101,14 @@
                                     "description": "The number of days the password can be valid.",
                                     "type": "integer"
                                 },
+                                "emailIntervalsEnabled": {
+                                    "description": "Whether emails intervals should be enabled or not.",
+                                    "type": "boolean"
+                                },
+                                "emailIntervalDays": {
+                                    "description": "The days, relative to the password expiring, to send an email",
+                                    "type": "array"
+                                },
                                 "emailTemplateId": {
                                     "description": "The unique identifier for the email template to use.",
                                     "type": "string",

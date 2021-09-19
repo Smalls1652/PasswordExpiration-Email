@@ -25,6 +25,12 @@ namespace PasswordExpiration.AzFunction.Models.Configs
         [JsonPropertyName("maxPasswordAge")]
         public int MaxPasswordAge { get; set; }
 
+        [JsonPropertyName("emailIntervalsEnabled")]
+        public bool EmailIntervalsEnabled { get; set; }
+
+        [JsonPropertyName("emailIntervalDays")]
+        public int[] EmailIntervalDays { get; set; }
+
         [JsonPropertyName("emailTemplateId")]
         public string EmailTemplateId { get; set; }
     }

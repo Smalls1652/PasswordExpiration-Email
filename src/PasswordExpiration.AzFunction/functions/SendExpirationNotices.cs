@@ -76,8 +76,8 @@ namespace PasswordExpiration.AzFunction
                     graphMailTools,
                     mailFromUPN,
                     userItem,
-                    functionsConfigSvc.GetEmailTemplateHtmlFileFullPath(emailTemplate),
-                    functionsConfigSvc.GetEmailTemplateAttachmentFileFullPath(emailTemplate).ToArray(),
+                    functionsConfigSvc,
+                    userSearchConfig,
                     false
                 );
 
