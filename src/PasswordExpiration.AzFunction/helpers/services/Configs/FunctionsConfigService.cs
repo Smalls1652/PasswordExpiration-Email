@@ -30,9 +30,8 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
 
         private readonly ILogger<FunctionsConfigService> logger;
 
-        private readonly string _defaultEmailFilesPath = Path.Join(Environment.CurrentDirectory, "defaults\\email-templates\\");
-
-        private readonly string _customEmailFilesPath = Path.Join(Environment.CurrentDirectory, "_email-files\\");
+        private readonly string _defaultEmailFilesPath = Path.Join(Environment.CurrentDirectory, $"defaults{Path.DirectorySeparatorChar}email-templates{Path.DirectorySeparatorChar}");
+        private readonly string _customEmailFilesPath = Path.Join(Environment.CurrentDirectory, $"_email-files{Path.DirectorySeparatorChar}");
 
         private void InitServiceSettings()
         {
@@ -41,13 +40,13 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
             string svcDir = Environment.CurrentDirectory;
 
             logger.LogInformation("Loading the default configs...");
-            string defaultEmailTemplatesPath = Path.Join(svcDir, "defaults\\email-templates\\email-templates.json");
-            string defaultSearchConfigsPath = Path.Join(svcDir, "defaults\\search-configs\\user-search-configs.json");
+            string defaultEmailTemplatesPath = Path.Join(svcDir, $"defaults{Path.DirectorySeparatorChar}email-templates{Path.DirectorySeparatorChar}email-templates.json");
+            string defaultSearchConfigsPath = Path.Join(svcDir, $"defaults{Path.DirectorySeparatorChar}search-configs{Path.DirectorySeparatorChar}user-search-configs.json");
 
             EmailTemplates.AddRange(ReadConfigFile<EmailTemplateCollection>(defaultEmailTemplatesPath).Templates);
             UserSearchConfigs.AddRange(ReadConfigFile<UserSearchConfigCollection>(defaultSearchConfigsPath).SearchConfigs);
 
-            string userEmailTemplatesPath = Path.Join(svcDir, "_service-config\\email-templates.json");
+            string userEmailTemplatesPath = Path.Join(svcDir, $"_service-config{Path.DirectorySeparatorChar}email-templates.json");
             try
             {
                 EmailTemplates.AddRange(ReadConfigFile<EmailTemplateCollection>(userEmailTemplatesPath).Templates);
@@ -57,7 +56,7 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
                 logger.LogWarning("No custom email templates config file was found.");
             }
 
-            string userSearchConfigsPath = Path.Join(svcDir, "_service-config\\user-search-configs.json");
+            string userSearchConfigsPath = Path.Join(svcDir, $"_service-config{Path.DirectorySeparatorChar}user-search-configs.json");
             try
             {
                 UserSearchConfigs.AddRange(ReadConfigFile<UserSearchConfigCollection>(userSearchConfigsPath).SearchConfigs);
@@ -67,7 +66,7 @@ namespace PasswordExpiration.AzFunction.Helpers.Services
                 logger.LogWarning("No custom user search configs file was found.");
             }
 
-            string automatedSearchesConfigPath = Path.Join(svcDir, "_service-config\\automated-searches.json");
+            string automatedSearchesConfigPath = Path.Join(svcDir, $"_service-config{Path.DirectorySeparatorChar}automated-searches.json");
             try
             {
                 AutomatedSearchConfigs.AddRange(ReadConfigFile<AutomatedSearchConfigCollection>(automatedSearchesConfigPath).AutomatedSearchConfigs);
