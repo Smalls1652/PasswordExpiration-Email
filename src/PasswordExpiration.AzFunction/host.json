@@ -8,5 +8,11 @@
             }
         }
     },
+    "extensions": {
+        "cosmosDB": {
+            "connectionMode": "Gateway",
+            "protocol": "Https"
+        }
+    },
     "functionTimeout": "-1"
 }
