@@ -32,7 +32,7 @@ namespace PasswordExpiration.AzFunction
             graphClientSvc = _graphClientSvc;
         }
 
-        [Function("GetUsersWithExpiringPassword")]
+        [Function("GetUsersWithExpiringPasswords")]
         public async Task<HttpResponseData> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "GetUsersWithExpiringPasswords/{configId}")] HttpRequestData req,
             string configId,
