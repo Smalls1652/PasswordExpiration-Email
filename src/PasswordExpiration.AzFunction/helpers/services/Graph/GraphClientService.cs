@@ -8,11 +8,10 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
 
+using SmallsOnline.MsGraphClient.Models.Common;
+
 namespace PasswordExpiration.AzFunction.Helpers.Services
 {
-    using Lib.Models.Core;
-    using Lib.Models.Graph.Core;
-
     /// <summary>
     /// Hosts the Microsoft Graph session client and provides methods to send API calls to it. Acts as a service that is shared between functions.
     /// </summary>

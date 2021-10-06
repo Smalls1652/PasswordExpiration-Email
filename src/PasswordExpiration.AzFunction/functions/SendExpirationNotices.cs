@@ -12,11 +12,9 @@ using Microsoft.Extensions.Logging;
 
 namespace PasswordExpiration.AzFunction
 {
-    using Lib;
     using Lib.Core;
     using Lib.Core.Graph;
     using Lib.Models.Core;
-    using Lib.Models.Graph.Core;
 
     using Helpers;
     using Models.Configs;
