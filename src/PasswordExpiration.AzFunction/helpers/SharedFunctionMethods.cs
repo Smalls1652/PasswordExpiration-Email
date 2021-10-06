@@ -14,6 +14,7 @@ namespace PasswordExpiration.AzFunction.Helpers
     using Lib;
     using Lib.Core;
     using Lib.Core.Graph;
+    using Lib.Models.Graph.Users;
     using Lib.Models.Core;
 
     public static class SharedFunctionMethods
@@ -137,6 +138,86 @@ namespace PasswordExpiration.AzFunction.Helpers
 
             // Sort all of the items alphabetically in the 'List' by each user's last name.
             userList.Sort((item1, item2) => string.Compare(item1.User.Surname, item2.User.Surname));
+
+            return userList;
+        }
+
+        public async static Task<List<User>> GetUsersByLastNames(
+            UserTools userTools,
+            UserSearchConfigItem searchConfigItem,
+            ILogger logger
+        )
+        {
+            /*
+                The following section is to prep for running the tasks by:
+                    - Creating a task throttler (using SemaphoreSlim) to limit the amount of concurrent threads used to 10.
+                    - Creating a 'ConcurrentBag' for the tasks to store each user data in.
+                    - Creating a 'List' for storing the created tasks in.
+            */
+            SemaphoreSlim taskThrottler = new(10);
+            ConcurrentBag<User> userListBag = new();
+            List<Task> taskList = new();
+
+            // Run a for loop to increment from 65 to 90 (The UTF32 decimal codes for the letters A-Z) to create the tasks to get users.
+            for (int i = 65; i <= 90; i++)
+            {
+                // If we reach the max number of concurrent tasks, then wait to create the rest of the tasks.
+                await taskThrottler.WaitAsync();
+
+                // Convert the current loop integer (i) value into the corresponding UTF32 character.
+                string lastNameStartsWith = Char.ConvertFromUtf32(i);
+                logger.LogInformation($"Creating task for getting users, under the '{searchConfigItem.DomainName}' domain and their last name starts with '{lastNameStartsWith}'.");
+
+                // Create the task to get the users.
+                taskList.Add(
+                    Task.Run(
+                        () =>
+                        {
+                            try
+                            {
+                                // Get all of the users matching the search criteria.
+                                List<User> userList = userTools.GetUsers(
+                                    searchConfigItem.DomainName,
+                                    searchConfigItem.OuPath,
+                                    lastNameStartsWith
+                                );
+
+                                // Add each found user into the 'ConcurrentBag' of all the users.
+                                foreach (User user in userList)
+                                {
+                                    userListBag.Add(user);
+                                }
+                            }
+                            finally
+                            {
+                                // When the task is finished, release the thread for the next task to utilize.
+                                taskThrottler.Release();
+                            }
+                        }
+                    )
+                );
+            }
+
+            // Wait for the remaining tasks to finish.
+            logger.LogInformation("Waiting for all remaining tasks to complete.");
+            Task.WaitAll(taskList.ToArray());
+
+            // Dispose of all of the tasks that were created.
+            logger.LogInformation("Cleaning up resources.");
+            foreach (Task task in taskList)
+            {
+                task.Dispose();
+            }
+
+            // Convert the 'ConcurrentBag' to a 'List'. Then clear all of the values out of the 'ConcurrentBag'.
+            List<User> userList = ConvertConcurrentBagToList<User>(userListBag);
+            userListBag.Clear();
+
+            taskList.Clear();
+            taskThrottler.Dispose();
+
+            // Sort all of the items alphabetically in the 'List' by each user's last name.
+            userList.Sort((item1, item2) => string.Compare(item1.Surname, item2.Surname));
 
             return userList;
         }
