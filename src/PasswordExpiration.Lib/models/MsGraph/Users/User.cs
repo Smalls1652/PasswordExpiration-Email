@@ -9,7 +9,10 @@ namespace PasswordExpiration.Lib.Models.Graph.Users
     public class User
     {
         public User() {}
-        
+
+        [JsonPropertyName("id")]
+        public string Id { get; set; }
+
         [JsonPropertyName("accountEnabled")]
         public bool AccountEnabled { get; set; }
 

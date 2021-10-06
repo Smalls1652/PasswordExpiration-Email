@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace PasswordExpiration.Lib.Models.Core
 {
@@ -19,38 +20,51 @@ namespace PasswordExpiration.Lib.Models.Core
             }
         }
 
+        [JsonPropertyName("id")]
+        public string Id
+        {
+            get => User.Id;
+        }
+
+        [JsonPropertyName("user")]
         public User User { get; set; }
 
+        [JsonPropertyName("passwordLastSetDate")]
         public Nullable<DateTimeOffset> PasswordLastSetDate
         {
             get => passwordLastSetDate;
         }
         private Nullable<DateTimeOffset> passwordLastSetDate;
 
+        [JsonPropertyName("passwordLifespan")]
         public Nullable<TimeSpan> PasswordLifespan
         {
             get => passwordLifespan;
         }
         private Nullable<TimeSpan> passwordLifespan;
 
+        [JsonPropertyName("passwordExpirationDate")]
         public Nullable<DateTimeOffset> PasswordExpirationDate
         {
             get => passwordExpirationDate;
         }
         private Nullable<DateTimeOffset> passwordExpirationDate;
 
+        [JsonPropertyName("passwordExpiresIn")]
         public Nullable<TimeSpan> PasswordExpiresIn
         {
             get => passwordExpiresIn;
         }
         private Nullable<TimeSpan> passwordExpiresIn;
 
+        [JsonPropertyName("passwordIsExpired")]
         public bool PasswordIsExpired
         {
             get => passwordIsExpired;
         }
         private bool passwordIsExpired;
 
+        [JsonPropertyName("passwordIsExpiringSoon")]
         public bool PasswordIsExpiringSoon
         {
             get => passwordIsExpiringSoon;

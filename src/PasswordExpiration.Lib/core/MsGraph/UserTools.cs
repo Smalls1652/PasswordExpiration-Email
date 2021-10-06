@@ -22,6 +22,7 @@ namespace PasswordExpiration.Lib.Core.Graph
         public IGraphClient GraphClient { get; set; }
 
         private string[] userProperties = new string[] {
+            "id",
             "accountEnabled",
             "userPrincipalName",
             "displayName",
