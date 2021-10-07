@@ -10,10 +10,6 @@ using Microsoft.Extensions.Logging;
 namespace PasswordExpiration.AzFunction
 {
     using Lib.Core;
-    using Lib.Core.Graph;
-    using Lib.Models.Core;
-    using Lib.Models.Graph.Core;
-    using Lib.Models.Graph.Users;
 
     using Helpers;
     using Helpers.Services;

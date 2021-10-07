@@ -1,9 +1,9 @@
 using Microsoft.Azure.Functions.Worker;
 
+using SmallsOnline.MsGraphClient.Models;
+
 namespace PasswordExpiration.AzFunction.Helpers.Services
 {
-    using Lib.Models.Core;
-
     public interface IGraphClientService : IGraphClient
     {
         void Connect();

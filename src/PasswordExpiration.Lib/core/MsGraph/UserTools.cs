@@ -4,9 +4,10 @@ using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 
+using SmallsOnline.MsGraphClient.Models;
+
 namespace PasswordExpiration.Lib.Core.Graph
 {
-    using PasswordExpiration.Lib.Models.Core;
     using PasswordExpiration.Lib.Models.Graph.Users;
 
     /// <summary>
