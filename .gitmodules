@@ -1,4 +1,0 @@
-[submodule "src/SmallsOnline.MsGraphClient"]
-	path = src/SmallsOnline.MsGraphClient
-	url = https://github.com/Smalls1652/SmallsOnline.MsGraphClient.git
-	branch = main

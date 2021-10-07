@@ -14,5 +14,14 @@
             "protocol": "Https"
         }
     },
+    "functions": [
+        "GetServiceConfig",
+        "GetUserExpirationDetails",
+        "GetUsersWithExpiringPasswords",
+        "RunAutomatedJobs",
+        "RunAutomatedJobsManually",
+        "SendExpirationNotice",
+        "SendExpirationNotices"
+    ],
     "functionTimeout": "-1"
 }
